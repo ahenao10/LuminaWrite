@@ -54,7 +54,7 @@ export default function LoginView({ onSignIn }) {
     } catch (err) {
       setErrorMsg(
         err.message ||
-          "Could not connect to backend at http://localhost:8000."
+          `Could not connect to backend at ${API_BASE_URL}.`
       );
     } finally {
       setIsLoading(false);

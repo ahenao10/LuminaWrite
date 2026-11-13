@@ -1,4 +1,15 @@
-export const API_BASE_URL = "http://localhost:8000";
+const envApiUrl = import.meta.env?.VITE_API_URL;
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+
+export const API_BASE_URL = (
+  envApiUrl ||
+  (isLocalhost
+    ? "http://localhost:8000"
+    : "https://luminawrite.onrender.com")
+).replace(/\/+$/, "");
 
 export const CEFR_LEVELS = [
   { code: "A1", name: "Beginner", label: "Level A1 Beginner" },

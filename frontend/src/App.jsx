@@ -172,7 +172,7 @@ export default function App() {
     } catch (err) {
       setErrorMessage(
         err.message ||
-          "Could not connect to backend at http://localhost:8000. Make sure FastAPI is running."
+          `Could not connect to backend at ${API_BASE_URL}. Make sure the API server is running.`
       );
     } finally {
       setIsGeneratingPrompt(false);
@@ -249,7 +249,7 @@ export default function App() {
     } catch (err) {
       setErrorMessage(
         err.message ||
-          "Could not evaluate text. Ensure the FastAPI backend is running on http://localhost:8000."
+          `Could not evaluate text. Ensure the backend is reachable at ${API_BASE_URL}.`
       );
     } finally {
       setIsEvaluating(false);
