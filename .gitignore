@@ -1,0 +1,16 @@
+# Entornos virtuales y dependencias
+venv/
+.venv/
+__pycache__/
+node_modules/
+dist/
+
+# Variables de entorno (NUNCA subir a GitHub)
+.env
+backend/.env
+frontend/.env
+.env.local
+
+# Archivos del sistema / IDE
+.DS_Store
+.vscode/

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-dim": "#d2d9f4", "error-container": "#ffdad6", "on-tertiary-fixed": "#002113", "error": "#ba1a1a", "on-secondary": "#ffffff", "on-error": "#ffffff", "secondary": "#4b41e1", "surface-container-high": "#e2e7ff", "surface-bright": "#faf8ff", "background": "#faf8ff", "surface-tint": "#494bd6", "primary-fixed-dim": "#c0c1ff", "inverse-primary": "#c0c1ff", "surface-variant": "#dae2fd", "secondary-container": "#645efb", "on-surface": "#131b2e", "inverse-surface": "#283044", "on-secondary-fixed-variant": "#3323cc", "surface-container-low": "#f2f3ff", "tertiary-container": "#00885d", "primary": "#4648d4", "surface-container-highest": "#dae2fd", "surface": "#faf8ff", "on-error-container": "#93000a", "on-secondary-container": "#fffbff", "primary-fixed": "#e1e0ff", "on-surface-variant": "#464554", "tertiary-fixed-dim": "#4edea3", "on-tertiary-container": "#000703", "on-primary-container": "#fffbff", "outline-variant": "#c7c4d7", "surface-container-lowest": "#ffffff", "inverse-on-surface": "#eef0ff", "on-primary": "#ffffff", "secondary-fixed": "#e2dfff", "on-background": "#131b2e", "on-secondary-fixed": "#0f0069", "on-primary-fixed": "#07006c", "tertiary": "#006c49", "primary-container": "#6063ee", "surface-container": "#eaedff", "on-tertiary": "#ffffff", "on-tertiary-fixed-variant": "#005236", "secondary-fixed-dim": "#c3c0ff", "tertiary-fixed": "#6ffbbe", "outline": "#767586", "on-primary-fixed-variant": "#2f2ebe" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-lg": "1.5rem", "margin": "1.5rem", "space-xs": "0.25rem", "gutter": "1.5rem", "margin-lg": "3rem", "space-sm": "0.5rem", "gutter-lg": "2rem", "space-md": "1rem", "space-xl": "2rem" }, "fontFamily": { "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Newsreader"], "headline-lg-mobile": ["Newsreader"], "label-md": ["Plus Jakarta Sans"], "headline-sm": ["Newsreader"], "headline-md": ["Newsreader"], "body-md": ["Plus Jakarta Sans"], "display-lg-mobile": ["Newsreader"], "body-lg": ["Plus Jakarta Sans"], "display-lg": ["Newsreader"], "body-xl": ["Newsreader"], "label-sm": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"] }, "fontSize": { "label-lg": ["0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-lg": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.015em", "fontWeight": "500" }], "headline-lg-mobile": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }], "label-md": ["0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.025em", "fontWeight": "600" }], "headline-sm": ["1.25rem", { "lineHeight": "1.75rem", "fontWeight": "600" }], "headline-md": ["1.5rem", { "lineHeight": "2rem", "fontWeight": "500" }], "body-md": ["0.9375rem", { "lineHeight": "1.5rem", "fontWeight": "400" }], "display-lg-mobile": ["2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.015em", "fontWeight": "400" }], "body-lg": ["1.125rem", { "lineHeight": "1.75rem", "fontWeight": "400" }], "display-lg": ["3rem", { "lineHeight": "3.5rem", "letterSpacing": "-0.02em", "fontWeight": "400" }], "body-xl": ["1.25rem", { "lineHeight": "2.125rem", "fontWeight": "400" }], "label-sm": ["0.6875rem", { "lineHeight": "0.875rem", "letterSpacing": "0.05em", "fontWeight": "600" }], "body-sm": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface min-h-screen selection:bg-primary-fixed selection:text-on-primary-fixed"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low z-50 flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-6"><div class="flex items-center gap-3 px-3"><img alt="Lumina Write Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrCDve9160UHSRVOaoe7aheUCPahsgkkrCwNfw5gz-LxKQwO2W7MxnXAoP3MsL_2PysX7HcvZ-d3J1aq83LcK6sVMZWE37G8W6nMsYzp9gShM2UeVOiHzZCqhFRljOA6RYfKO-0Ab66zt8R7D38E550nuW0QzX6E02FfJnW9NNGcO49DX7Lp4GMOSkhrin5It-fZ-ON2xXI-zT-46_9TU7VFC_u3IlOJ63QBtjU_Xu5S"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Lumina Write</span></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-sm"><a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="daily-practice" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span class="font-label-lg text-label-lg">Daily Practice</span></a><a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="journal-entries" href="#"><span class="material-symbols-outlined text-[20px]">menu_book</span><span class="font-label-lg text-label-lg">Journal Entries</span></a><a class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="calendar-and-progress" href="#"><span class="material-symbols-outlined text-[20px]">calendar_month</span><span class="font-label-lg text-label-lg">Calendar &amp; Progress</span></a><a aria-current="page" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all bg-primary-container text-on-primary-container font-semibold shadow-sm" data-path="session-review" href="#"><span class="material-symbols-outlined text-[20px]">rate_review</span><span class="font-label-lg text-label-lg">Session Review</span></a></nav></div><div class="flex flex-col gap-4 px-2"><div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center justify-between mb-2"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Writing Goal</span><span class="font-label-sm text-label-sm text-primary font-bold">4/5 Days</span></div><div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden"><div class="bg-primary h-full rounded-full w-[80%]"></div></div></div><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="font-label-md text-label-md">Coach Settings</span></a></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 px-gutter-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-3"><div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface"><span class="text-base leading-none">🔥</span><span class="font-label-md text-label-md font-semibold">14 Days Streak</span></div><div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-container/15 text-tertiary"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span><span class="font-label-md text-label-md font-semibold">Level B2 Upper-Intermediate</span></div></div><div class="flex items-center gap-4"><button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm"><span class="material-symbols-outlined text-[18px]">add</span><span class="font-label-lg text-label-lg">New Writing</span></button><button aria-label="Notifications" class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="flex items-center gap-2 pl-2 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsZgdJune3PB8FuMDHckTyl6mt9IEPKFGRAFq_kIpR6gIJl75lsdVfL6NlBt1vasSokX8M93J1JkylyBf_4yWvCOmRMnz1TX-d8t06ulVvBc6zCFhxbid2VHsTYrWb-_x89VLzuWhRXh-ZLGr9L1Y8MMNZQ4skfplj9YOXW9LelCshaYePOj8PIuBG0sN69bq1TtBNtptiwybv5oAev2sfJXiRZGNHlAQOXuHeGh6R"/><span class="material-symbols-outlined text-on-surface-variant text-[18px]">keyboard_arrow_down</span></div></div></header><main class="w-full pt-16 bg-surface px-space-xl"><div class="flex flex-col w-full pb-16">
+<!-- Top Navigation & Metadata Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 border-b border-surface-container-high/60">
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-2">
+<a class="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+          Back to Journal
+        </a>
+<span class="text-on-surface-variant/40">•</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Session Review &amp; AI Evaluation</span>
+</div>
+<div class="flex items-baseline gap-3 flex-wrap">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">The Nuances of Remote Work</h1>
+<span class="font-label-md text-label-md px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-semibold">Prompt #104</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+        Completed Oct 19, 2024 • 10:45 AM <span class="text-on-surface-variant/40">|</span> 428 words <span class="text-on-surface-variant/40">|</span> Writing Time: 18m 42s
+      </p>
+</div>
+<!-- Top Action Bar -->
+<div class="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+        Re-practice Topic
+      </button>
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+        Export PDF
+      </button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container shadow-sm transition-all font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">share</span>
+        Share Report
+      </button>
+</div>
+</div>
+<!-- Overall Score & Rubric Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-6">
+<!-- Composite Score Card -->
+<div class="lg:col-span-4 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-12 -top-12 w-40 h-40 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Evaluation Summary</span>
+<span class="inline-flex items-center gap-1 text-tertiary bg-tertiary-container/15 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +4 pts vs last entry
+          </span>
+</div>
+<div class="flex items-baseline gap-3 mt-4">
+<span class="font-display-lg text-display-lg text-primary tracking-tight font-semibold">92</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">/ 100</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Grade A</span>
+<span class="text-on-surface-variant">•</span>
+<span class="font-body-md text-body-md text-primary font-semibold">CEFR B2+ (Advanced Upper-Intermediate)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-3 leading-relaxed">
+          Demonstrates an articulate mastery of complex structural discourse with nuanced vocabulary. Minor infelicities in prepositional collocations noted.
+        </p>
+</div>
+<!-- Strengths badge row -->
+<div class="mt-6 pt-4 border-t border-surface-container flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">verified</span>
+<span class="font-label-sm text-label-sm text-on-surface">Strongest asset: <strong>Thesis Progression &amp; Transitions</strong></span>
+</div>
+</div>
+<!-- Rubric Sub-scores Card -->
+<div class="lg:col-span-8 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-3">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Evaluation Rubrics</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">IELTS &amp; CEFR Standardized</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 my-auto">
+<!-- Rubric 1: Grammar -->
+<div class="flex flex-col gap-1.5 p-3 rounded-lg bg-surface-container-low/50">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-md text-label-md text-on-surface">Grammar &amp; Accuracy</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-primary">94%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-700" style="width: 94%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] truncate">1 minor subject agreement tweak • Zero catastrophic tense faults</span>
+</div>
+<!-- Rubric 2: Vocabulary -->
+<div class="flex flex-col gap-1.5 p-3 rounded-lg bg-surface-container-low/50">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="font-label-md text-label-md text-on-surface">Vocabulary &amp; Lexis</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-secondary-container">88%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full transition-all duration-700" style="width: 88%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] truncate">Good lexical breadth; 3 informal phrasing upgrades suggested</span>
+</div>
+<!-- Rubric 3: Coherence -->
+<div class="flex flex-col gap-1.5 p-3 rounded-lg bg-surface-container-low/50">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-label-md text-on-surface">Coherence &amp; Structure</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-tertiary">95%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-700" style="width: 95%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] truncate">Fluid paragraph transitions and clear deductive reasoning</span>
+</div>
+<!-- Rubric 4: Task Response -->
+<div class="flex flex-col gap-1.5 p-3 rounded-lg bg-surface-container-low/50">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-md text-label-md text-on-surface">Task Response &amp; Depth</span>
+</div>
+<span class="font-label-md text-label-md font-bold text-primary-container">90%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full transition-all duration-700" style="width: 90%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-[11px] truncate">Directly synthesized dual prompt dimensions (autonomy vs isolation)</span>
+</div>
+</div>
+<!-- Rubric Quick Legend -->
+<div class="flex items-center justify-between pt-3 border-t border-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span> 4 suggestions auto-applied
+        </span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">psychology</span> Coach Mode: Oxford Scholarly
+        </span>
+</div>
+</div>
+</div>
+<!-- Interactive Side-by-Side Diff Section -->
+<div class="mt-8 flex flex-col gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Interactive Text Comparison</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Click any annotated change in either column to inspect linguistic commentary.</p>
+</div>
+<!-- Diff Filter Controls -->
+<div class="inline-flex items-center p-1 rounded-lg bg-surface-container-low self-start">
+<button class="px-3 py-1 rounded font-label-sm text-label-sm bg-surface-container-lowest text-on-surface shadow-xs font-semibold" id="btn-split" onclick="toggleDiffView('split')">
+          Side-by-Side
+        </button>
+<button class="px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" id="btn-polished" onclick="toggleDiffView('polished')">
+          Polished Only
+        </button>
+<button class="px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" id="btn-original" onclick="toggleDiffView('original')">
+          Original Only
+        </button>
+</div>
+</div>
+<!-- Side-by-Side Containers -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start" id="diff-container">
+<!-- Left: Original Draft -->
+<div class="rounded-xl bg-surface-container-lowest p-6 shadow-sm relative border-t-2 border-primary/20" id="col-original">
+<div class="flex items-center justify-between pb-4 border-b border-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">edit_note</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Your Original Draft</span>
+</div>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded bg-error-container/40 text-on-error-container font-semibold">
+            3 Annotations
+          </span>
+</div>
+<div class="prose font-body-xl text-body-xl text-on-surface leading-loose pt-5 space-y-4">
+<p>
+            The shift towards remote operations has dramatically reformed contemporary workplaces. While advocates frequent laud its unprecedented flexibility, this arrangement is not devoid of pitfalls. When employees fail to establish distinct working boundaries, excessive responsibilities can 
+            <span class="cursor-pointer bg-error-container/60 text-on-error-container line-through decoration-error decoration-2 px-1 py-0.5 rounded" onclick="highlightExplanation(1)" title="Click to view explanation">
+              lead to big burnout
+            </span> 
+            over extended durations.
+          </p>
+<p>
+            Furthermore, the absence of spontaneous social banter in physical offices 
+            <span class="cursor-pointer bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border-b-2 border-amber-400" onclick="highlightExplanation(2)" title="Awkward phrasing">
+              makes workers feel very alone
+            </span>, 
+            which subsequently degrades collective cohesion. It is thus pivotal for management to arrange recurring digital meetups 
+            <span class="cursor-pointer bg-error-container/60 text-on-error-container line-through decoration-error px-1 py-0.5 rounded" onclick="highlightExplanation(3)" title="Incorrect preposition">
+              for mitigate
+            </span> 
+            psychological disconnection.
+          </p>
+</div>
+<div class="mt-6 pt-4 border-t border-surface-container flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Lexical variety: 74%</span>
+<span>Draft 1.0 (Final submitted)</span>
+</div>
+</div>
+<!-- Right: AI Polished Version -->
+<div class="rounded-xl bg-surface-container-lowest p-6 shadow-sm relative border-t-2 border-tertiary" id="col-polished">
+<div class="flex items-center justify-between pb-4 border-b border-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">auto_fix_high</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">AI Scholarly Refinement</span>
+</div>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded bg-tertiary-container/20 text-tertiary font-semibold">
+            Polished &amp; Fluent
+          </span>
+</div>
+<div class="prose font-body-xl text-body-xl text-on-surface leading-loose pt-5 space-y-4">
+<p>
+            The shift towards remote operations has dramatically reformed contemporary workplaces. While advocates frequent laud its unprecedented flexibility, this arrangement is not devoid of pitfalls. When employees fail to establish distinct working boundaries, excessive responsibilities can 
+            <span class="cursor-pointer bg-tertiary-container/20 text-on-tertiary-fixed-variant font-medium px-1.5 py-0.5 rounded border-b-2 border-tertiary" onclick="highlightExplanation(1)">
+              culminate in severe burnout
+            </span> 
+            over extended durations.
+          </p>
+<p>
+            Furthermore, the absence of spontaneous social banter in physical offices 
+            <span class="cursor-pointer bg-tertiary-container/20 text-on-tertiary-fixed-variant font-medium px-1.5 py-0.5 rounded border-b-2 border-tertiary" onclick="highlightExplanation(2)">
+              engenders pervasive isolation
+            </span>, 
+            which subsequently degrades collective cohesion. It is thus pivotal for management to arrange recurring digital meetups 
+            <span class="cursor-pointer bg-tertiary-container/20 text-on-tertiary-fixed-variant font-medium px-1.5 py-0.5 rounded border-b-2 border-tertiary" onclick="highlightExplanation(3)">
+              to mitigate
+            </span> 
+            psychological disconnection.
+          </p>
+</div>
+<div class="mt-6 pt-4 border-t border-surface-container flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Lexical variety: 89% (+15%)</span>
+<button class="inline-flex items-center gap-1 text-primary hover:underline font-semibold" onclick="navigator.clipboard.writeText('The shift towards remote operations has dramatically reformed contemporary workplaces. While advocates frequent laud its unprecedented flexibility, this arrangement is not devoid of pitfalls. When employees fail to establish distinct working boundaries, excessive responsibilities can culminate in severe burnout over extended durations. Furthermore, the absence of spontaneous social banter in physical offices engenders pervasive isolation, which subsequently degrades collective cohesion. It is thus pivotal for management to arrange recurring digital meetups to mitigate psychological disconnection.'); alert('Polished draft copied to clipboard!');">
+<span class="material-symbols-outlined text-[16px]">content_copy</span> Copy Clean Draft
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline Detailed Explanations Panel -->
+<div class="mt-8 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="p-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed">
+<span class="material-symbols-outlined text-[20px]">psychology_alt</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Pedagogical Corrections &amp; Linguistic Rationale</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Scholarly insights explaining syntactic, register, and collocational enhancements.</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant hidden sm:inline-block">3 items identified</span>
+</div>
+<!-- Explanations Cards List -->
+<div class="flex flex-col gap-3.5">
+<!-- Item 1: Collocation / Register -->
+<div class="transition-all duration-300 rounded-xl bg-surface-container-lowest p-5 shadow-sm border-l-4 border-secondary-container" id="card-expl-1">
+<div class="flex items-start justify-between gap-4">
+<div class="flex items-center gap-2.5 flex-wrap">
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold">
+              Vocabulary &amp; Collocation
+            </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Paragraph 1, Line 3</span>
+</div>
+<span class="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
+</div>
+<div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-3 font-body-md text-body-md">
+<div class="flex items-center gap-2 bg-error-container/30 px-3 py-1.5 rounded-lg text-on-error-container">
+<span class="material-symbols-outlined text-[16px] text-error">close</span>
+<span class="line-through">lead to big burnout</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/60 text-[18px] rotate-90 sm:rotate-0 self-center">arrow_forward</span>
+<div class="flex items-center gap-2 bg-tertiary-container/15 px-3 py-1.5 rounded-lg text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>culminate in severe burnout</span>
+</div>
+</div>
+<div class="mt-3.5 pt-3 border-t border-surface-container flex flex-col gap-1.5">
+<p class="font-body-md text-body-md text-on-surface">
+<strong>Pedagogical Insight:</strong> In scholarly and analytical prose, phrases like <em>"lead to big"</em> sound overly colloquial and vague. The phrasal verb <strong>"culminate in"</strong> precisely denotes reaching a decisive climactic or consequential point after a long progression. Pairing it with the adjective <strong>"severe"</strong> establishes an academic tone typical of CEFR C1/B2+ registers.
+          </p>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Recommended synonyms:</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface">precipitate intense exhaustion</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface">induce acute fatigue</span>
+</div>
+</div>
+</div>
+<!-- Item 2: Precision & Expressiveness -->
+<div class="transition-all duration-300 rounded-xl bg-surface-container-lowest p-5 shadow-sm border-l-4 border-primary" id="card-expl-2">
+<div class="flex items-start justify-between gap-4">
+<div class="flex items-center gap-2.5 flex-wrap">
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold">
+              Lexical Sophistication
+            </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Paragraph 2, Line 1</span>
+</div>
+<span class="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
+</div>
+<div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-3 font-body-md text-body-md">
+<div class="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-lg text-amber-900 border border-amber-200">
+<span class="material-symbols-outlined text-[16px] text-amber-600">report</span>
+<span class="line-through">makes workers feel very alone</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/60 text-[18px] rotate-90 sm:rotate-0 self-center">arrow_forward</span>
+<div class="flex items-center gap-2 bg-tertiary-container/15 px-3 py-1.5 rounded-lg text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>engenders pervasive isolation</span>
+</div>
+</div>
+<div class="mt-3.5 pt-3 border-t border-surface-container flex flex-col gap-1.5">
+<p class="font-body-md text-body-md text-on-surface">
+<strong>Pedagogical Insight:</strong> Overusing generic causative verbs (<em>"makes someone feel"</em>) alongside generic intensifiers (<em>"very alone"</em>) dilutes analytical authority. The transitive verb <strong>"engender"</strong> formalizes the causality, and <strong>"pervasive isolation"</strong> accurately paints widespread systemic detachment.
+          </p>
+</div>
+</div>
+<!-- Item 3: Grammar & Infinitive -->
+<div class="transition-all duration-300 rounded-xl bg-surface-container-lowest p-5 shadow-sm border-l-4 border-error" id="card-expl-3">
+<div class="flex items-start justify-between gap-4">
+<div class="flex items-center gap-2.5 flex-wrap">
+<span class="px-2.5 py-0.5 rounded font-label-sm text-label-sm bg-error-container text-on-error-container font-semibold">
+              Grammatical Syntax
+            </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Paragraph 2, Line 3</span>
+</div>
+<span class="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
+</div>
+<div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-3 font-body-md text-body-md">
+<div class="flex items-center gap-2 bg-error-container/30 px-3 py-1.5 rounded-lg text-on-error-container">
+<span class="material-symbols-outlined text-[16px] text-error">close</span>
+<span class="line-through">for mitigate</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/60 text-[18px] rotate-90 sm:rotate-0 self-center">arrow_forward</span>
+<div class="flex items-center gap-2 bg-tertiary-container/15 px-3 py-1.5 rounded-lg text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>to mitigate</span>
+</div>
+</div>
+<div class="mt-3.5 pt-3 border-t border-surface-container flex flex-col gap-1.5">
+<p class="font-body-md text-body-md text-on-surface">
+<strong>Pedagogical Insight:</strong> In English, purpose is designated via the full infinitive construction (<strong>to + base verb</strong>), rather than <em>for + base verb</em>. Alternatively, one could construct <em>"for the purpose of mitigating"</em> or <em>"in order to mitigate"</em>, but the simple infinitive <strong>"to mitigate"</strong> is concise and grammatically sound.
+          </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Follow-up Retention Quiz & Reflection Journal -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
+<!-- Interactive Micro-Quiz -->
+<div class="lg:col-span-7 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3 border-b border-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">quiz</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Retention &amp; Reinforcement Check</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container font-semibold text-on-surface-variant">Question 1 of 1</span>
+</div>
+<div class="mt-4">
+<span class="font-label-sm text-label-sm text-primary uppercase font-bold tracking-wider">Concept: Collocation Mastery</span>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold mt-1">
+            Based on the coach corrections, which sentence correctly and naturally incorporates the phrase <span class="text-primary italic">"culminate in"</span>?
+          </p>
+</div>
+<!-- Quiz Options -->
+<div class="flex flex-col gap-2.5 mt-4" id="quiz-options">
+<label class="flex items-center gap-3 p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all border-2 border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary-fixed/20">
+<input class="w-4 h-4 text-primary focus:ring-primary" name="retention-quiz" type="radio" value="a"/>
+<span class="font-body-md text-body-md text-on-surface">A) Years of diplomatic impasse culminated in a landmark treaty agreement.</span>
+</label>
+<label class="flex items-center gap-3 p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all border-2 border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary-fixed/20">
+<input class="w-4 h-4 text-primary focus:ring-primary" name="retention-quiz" type="radio" value="b"/>
+<span class="font-body-md text-body-md text-on-surface">B) The supervisor culminated his employees to work faster during peak hours.</span>
+</label>
+<label class="flex items-center gap-3 p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-all border-2 border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary-fixed/20">
+<input class="w-4 h-4 text-primary focus:ring-primary" name="retention-quiz" type="radio" value="c"/>
+<span class="font-body-md text-body-md text-on-surface">C) She chose to culminate at the train station instead of driving home.</span>
+</label>
+</div>
+<!-- Quiz Response Feedback Box -->
+<div class="hidden mt-4 p-3.5 rounded-lg" id="quiz-feedback">
+<div class="flex items-center gap-2 font-label-md text-label-md" id="feedback-title"></div>
+<p class="font-body-sm text-body-sm mt-1" id="feedback-body"></p>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-surface-container flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Earn +15 XP toward your B2+ certification goal</span>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all font-label-md text-label-md shadow-sm" id="btn-validate-quiz" onclick="validateQuizAnswer()">
+          Verify Answer
+        </button>
+</div>
+</div>
+<!-- Personal Reflection Notes Container -->
+<div class="lg:col-span-5 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3 border-b border-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">history_edu</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Personal Reflection</span>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Auto-saved
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-3">
+          Jot down personal takeaways or mnemonic notes to cement today's lexical upgrades into long-term recall.
+        </p>
+<div class="mt-3.5">
+<textarea class="w-full p-3.5 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-on-surface-variant/50 transition-all leading-relaxed" id="reflection-textarea" placeholder="e.g. Note to self: Remember that 'culminate in' requires an outcome noun, not a person or destination. Practice using 'engender' in tomorrow's paragraph..." rows="5"></textarea>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-container flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant" id="reflection-counter">0 words written</span>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" onclick="saveReflection()">
+<span class="material-symbols-outlined text-[16px]">bookmark_added</span> Save to Binder
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function highlightExplanation(id) {
+    const card = document.getElementById('card-expl-' + id);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const origBg = card.className;
+      card.classList.add('ring-2', 'ring-primary', 'shadow-md');
+      setTimeout(() => {
+        card.classList.remove('ring-2', 'ring-primary', 'shadow-md');
+      }, 1500);
+    }
+  }
+
+  function toggleDiffView(view) {
+    const colOrig = document.getElementById('col-original');
+    const colPol = document.getElementById('col-polished');
+    const container = document.getElementById('diff-container');
+
+    const btnSplit = document.getElementById('btn-split');
+    const btnPolished = document.getElementById('btn-polished');
+    const btnOrig = document.getElementById('btn-original');
+
+    [btnSplit, btnPolished, btnOrig].forEach(btn => {
+      btn.className = 'px-3 py-1 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface';
+    });
+
+    if (view === 'split') {
+      btnSplit.className = 'px-3 py-1 rounded font-label-sm text-label-sm bg-surface-container-lowest text-on-surface shadow-xs font-semibold';
+      colOrig.classList.remove('hidden');
+      colPol.classList.remove('hidden');
+      container.className = 'grid grid-cols-1 lg:grid-cols-2 gap-5 items-start';
+    } else if (view === 'polished') {
+      btnPolished.className = 'px-3 py-1 rounded font-label-sm text-label-sm bg-surface-container-lowest text-on-surface shadow-xs font-semibold';
+      colOrig.classList.add('hidden');
+      colPol.classList.remove('hidden');
+      container.className = 'grid grid-cols-1 max-w-3xl mx-auto w-full';
+    } else if (view === 'original') {
+      btnOrig.className = 'px-3 py-1 rounded font-label-sm text-label-sm bg-surface-container-lowest text-on-surface shadow-xs font-semibold';
+      colOrig.classList.remove('hidden');
+      colPol.classList.add('hidden');
+      container.className = 'grid grid-cols-1 max-w-3xl mx-auto w-full';
+    }
+  }
+
+  function validateQuizAnswer() {
+    const checked = document.querySelector('input[name="retention-quiz"]:checked');
+    const feedbackBox = document.getElementById('quiz-feedback');
+    const feedbackTitle = document.getElementById('feedback-title');
+    const feedbackBody = document.getElementById('feedback-body');
+
+    if (!checked) {
+      alert('Please select an option before checking.');
+      return;
+    }
+
+    feedbackBox.classList.remove('hidden', 'bg-tertiary-container/20', 'text-on-tertiary-container', 'bg-error-container', 'text-on-error-container');
+
+    if (checked.value === 'a') {
+      feedbackBox.classList.add('bg-tertiary-container/20', 'text-tertiary');
+      feedbackTitle.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span> Correct! Well reasoned.';
+      feedbackBody.textContent = '"Culminate in" is an intransitive verb phrase meaning to reach an eventual climax or definitive conclusion, usually after a lengthy process.';
+    } else {
+      feedbackBox.classList.add('bg-error-container', 'text-on-error-container');
+      feedbackTitle.innerHTML = '<span class="material-symbols-outlined text-[18px]">cancel</span> Not quite right';
+      feedbackBody.textContent = 'Notice that "culminate in" is not transitive (cannot take a human direct object like "culminated his employees") nor does it mean physical arrival at a location. Option A correctly uses it to describe a process ending in a final result.';
+    }
+  }
+
+  const reflectionArea = document.getElementById('reflection-textarea');
+  const reflectionCounter = document.getElementById('reflection-counter');
+
+  reflectionArea.addEventListener('input', (e) => {
+    const text = e.target.value.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    reflectionCounter.textContent = words + (words === 1 ? ' word written' : ' words written');
+  });
+
+  function saveReflection() {
+    if (!reflectionArea.value.trim()) {
+      alert('Add your reflection notes first before saving.');
+      return;
+    }
+    alert('Reflection saved to your Lumina Write study binder!');
+  }
+</script></main></div></body></html>
