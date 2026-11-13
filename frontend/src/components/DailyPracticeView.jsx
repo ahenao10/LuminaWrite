@@ -246,7 +246,7 @@ export default function DailyPracticeView({
               </div>
               <input
                 className="font-headline-sm text-headline-sm text-on-surface bg-transparent focus:outline-none w-full py-1 placeholder:text-outline-variant"
-                placeholder="Enter your essay title..."
+                placeholder="AI-suggested title (editable)..."
                 type="text"
                 value={essayTitle}
                 onChange={(e) => onChangeTitle(e.target.value)}

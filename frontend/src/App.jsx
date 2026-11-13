@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CalendarProgressView from "./components/CalendarProgressView";
 import DailyPracticeView from "./components/DailyPracticeView";
 import JournalEntriesView from "./components/JournalEntriesView";
@@ -65,13 +65,32 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem("lumina_theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    try {
+      localStorage.setItem("lumina_theme", isDarkMode ? "dark" : "light");
+    } catch {
+      // ignore storage error
+    }
+  }, [isDarkMode]);
+
   const [activeTab, setActiveTab] = useState("daily-practice");
-  const [selectedCefr, setSelectedCefr] = useState("B2");
-  const [selectedTopic, setSelectedTopic] = useState("All Topics");
+  const [selectedCefr, setSelectedCefr] = useState("B1");
+  const [selectedTopic, setSelectedTopic] = useState("Daily Lifestyle");
   const [promptData, setPromptData] = useState(DEFAULT_PROMPT);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
-  const [essayTitle, setEssayTitle] = useState("");
+  const [essayTitle, setEssayTitle] = useState(
+    DEFAULT_PROMPT.suggested_title || ""
+  );
   const [userText, setUserText] = useState("");
 
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -103,10 +122,12 @@ export default function App() {
     setAccessToken(token);
     setCurrentUser(user);
     setUserProfile(profile);
+    const initialLevel = profile?.target_cefr || selectedCefr;
     if (profile?.target_cefr) {
       setSelectedCefr(profile.target_cefr);
     }
     await fetchEntriesFromDb(token);
+    handleGeneratePrompt(initialLevel, selectedTopic);
   };
 
   const handleSignOut = async () => {
@@ -126,8 +147,9 @@ export default function App() {
     setJournalEntries([]);
     setActiveReviewEntry(null);
     setLatestEvaluation(null);
-    setEssayTitle("");
+    setEssayTitle(DEFAULT_PROMPT.suggested_title || "");
     setUserText("");
+    setSelectedCefr("B1");
     setActiveTab("daily-practice");
   };
 
@@ -135,16 +157,19 @@ export default function App() {
     return <LoginView onSignIn={handleSignIn} />;
   }
 
-  const handleGeneratePrompt = async (overrideLevel) => {
+  const handleGeneratePrompt = async (overrideLevel, overrideTopic) => {
     const levelToUse =
       typeof overrideLevel === "string" ? overrideLevel : selectedCefr;
+    const topicToUse =
+      typeof overrideTopic === "string" ? overrideTopic : selectedTopic;
     setIsGeneratingPrompt(true);
     setErrorMessage("");
+    setUserText("");
 
     try {
       const body = {
         cefr_level: levelToUse,
-        topic: selectedTopic === "All Topics" ? null : selectedTopic,
+        topic: topicToUse === "All Topics" ? null : topicToUse,
       };
 
       const res = await fetch(`${API_BASE_URL}/api/generate-prompt`, {
@@ -161,13 +186,17 @@ export default function App() {
       }
 
       const data = await res.json();
+      const recommendedTitle =
+        data.suggested_title ||
+        `${data.topic || "Writing Practice"} — ${levelToUse} Essay`;
       setPromptData({
         topic: data.topic || "Daily Practice",
+        suggested_title: recommendedTitle,
         question: data.question,
         min_words: Math.max(15, data.min_words || 15),
         tips: Array.isArray(data.tips) ? data.tips : [],
       });
-      setEssayTitle(`${data.topic || "Writing Practice"} — ${levelToUse} Essay`);
+      setEssayTitle(recommendedTitle);
       setLatestEvaluation(null);
     } catch (err) {
       setErrorMessage(
@@ -180,7 +209,14 @@ export default function App() {
   };
 
   const handleSelectCefr = (newLevel) => {
+    if (newLevel === selectedCefr) return;
     setSelectedCefr(newLevel);
+    handleGeneratePrompt(newLevel, selectedTopic);
+  };
+
+  const handleSelectTopic = (newTopic) => {
+    setSelectedTopic(newTopic);
+    handleGeneratePrompt(selectedCefr, newTopic);
   };
 
   const handleEvaluate = async () => {
@@ -240,8 +276,7 @@ export default function App() {
       setJournalEntries((prev) => [newEntry, ...prev]);
       setActiveReviewEntry(newEntry);
 
-      // Clear editor, redirect to Session Review, and prepare a new optional prompt for Daily Practice
-      setEssayTitle("");
+      // Clear editor, redirect to Session Review, and prepare a new optional prompt + title for Daily Practice
       setUserText("");
       setActiveTab("session-review");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -339,7 +374,11 @@ export default function App() {
   };
 
   const handleStartNewWriting = () => {
-    setEssayTitle("");
+    setEssayTitle(
+      promptData.suggested_title ||
+        DEFAULT_PROMPT.suggested_title ||
+        `${promptData.topic || "Writing Practice"} — ${selectedCefr} Essay`
+    );
     setUserText("");
     setLatestEvaluation(null);
     setActiveTab("daily-practice");
@@ -349,7 +388,7 @@ export default function App() {
   const currentCefrObj =
     CEFR_LEVELS.find(
       (l) => l.code === (latestEvaluation?.cefr_level || selectedCefr)
-    ) || CEFR_LEVELS[3];
+    ) || CEFR_LEVELS[2];
 
   const uniqueDaysLogged = new Set(
     journalEntries.map((e) => e.dayOfMonth).filter(Boolean)
@@ -483,14 +522,27 @@ export default function App() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            <span className="font-label-md text-label-md">Sign Out</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex-1 flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">logout</span>
+              <span className="font-label-md text-label-md">Sign Out</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDarkMode((prev) => !prev)}
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDarkMode ? "Light mode" : "Dark mode"}
+              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer shrink-0"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isDarkMode ? "light_mode" : "dark_mode"}
+              </span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -554,16 +606,18 @@ export default function App() {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleStartNewWriting}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              <span className="font-label-lg text-label-lg hidden sm:inline">
-                New Writing
-              </span>
-            </button>
+            {activeTab === "calendar-and-progress" && (
+              <button
+                type="button"
+                onClick={handleStartNewWriting}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span className="font-label-lg text-label-lg hidden sm:inline">
+                  New Writing
+                </span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -574,7 +628,7 @@ export default function App() {
               selectedCefr={selectedCefr}
               onSelectCefr={handleSelectCefr}
               selectedTopic={selectedTopic}
-              onSelectTopic={setSelectedTopic}
+              onSelectTopic={handleSelectTopic}
               promptData={promptData}
               isGeneratingPrompt={isGeneratingPrompt}
               onGeneratePrompt={handleGeneratePrompt}

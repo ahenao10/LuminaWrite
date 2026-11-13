@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 export default function CalendarProgressView({
   entries = [],
-  currentCefr = "B2",
+  currentCefr = "B1",
   onSelectEntryForReview,
   onStartWriting,
 }) {
@@ -40,7 +40,106 @@ export default function CalendarProgressView({
     100,
     Math.round((activeDaysLogged / monthlyTarget) * 100)
   );
-  const cefrProgressPercent = Math.min(100, reviewedEntries.length * 10);
+  const cefrProgress = (() => {
+    const scoresByDay = {};
+    reviewedEntries.forEach((entry) => {
+      const score = entry.evaluation?.score;
+      if (entry.dayOfMonth && typeof score === "number") {
+        if (!scoresByDay[entry.dayOfMonth]) {
+          scoresByDay[entry.dayOfMonth] = { sum: 0, count: 0 };
+        }
+        scoresByDay[entry.dayOfMonth].sum += score;
+        scoresByDay[entry.dayOfMonth].count += 1;
+      }
+    });
+
+    const sortedDays = Object.keys(scoresByDay)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    if (sortedDays.length === 0) {
+      return {
+        percent: 0,
+        state: "empty",
+        label: "No data yet",
+        detail: "Complete your first writing check",
+        barClass: "bg-surface-container-highest",
+        badgeClass: "bg-surface-container text-on-surface-variant",
+        textClass: "text-on-surface-variant",
+        icon: "trending_flat",
+      };
+    }
+
+    const dayAverages = sortedDays.map(
+      (day) => scoresByDay[day].sum / scoresByDay[day].count
+    );
+    const latestAvg = dayAverages[dayAverages.length - 1];
+
+    // Exponentially Weighted Moving Average (alpha = 0.45) across days:
+    // rewards consistent day-over-day growth and drops objectively when scores fall.
+    const alpha = 0.45;
+    let ewma = dayAverages[0];
+    for (let i = 1; i < dayAverages.length; i += 1) {
+      ewma = alpha * dayAverages[i] + (1 - alpha) * ewma;
+    }
+    const percent = Math.min(100, Math.max(0, Math.round(ewma)));
+
+    if (dayAverages.length === 1) {
+      return {
+        percent,
+        state: "baseline",
+        label: "Day 1 baseline",
+        detail: `Avg ${Math.round(latestAvg)}/100 • Practice another day to compare`,
+        barClass: "bg-primary",
+        badgeClass: "bg-primary/10 text-primary",
+        textClass: "text-primary",
+        icon: "flag",
+      };
+    }
+
+    const previousDays = dayAverages.slice(0, -1);
+    const previousMean =
+      previousDays.reduce((acc, val) => acc + val, 0) / previousDays.length;
+    const delta = Math.round(latestAvg - previousMean);
+    const priorAvgRounded = Math.round(previousMean);
+
+    if (delta >= 2) {
+      return {
+        percent,
+        state: "improving",
+        label: "Improving",
+        detail: `+${delta} pts vs prior avg (${priorAvgRounded})`,
+        barClass: "bg-tertiary",
+        badgeClass: "bg-tertiary/10 text-tertiary",
+        textClass: "text-tertiary",
+        icon: "trending_up",
+      };
+    }
+
+    if (delta > -2) {
+      return {
+        percent,
+        state: "steady",
+        label: "Steady",
+        detail: `Close to prior avg (${priorAvgRounded})`,
+        barClass: "bg-primary",
+        badgeClass: "bg-primary/10 text-primary",
+        textClass: "text-primary",
+        icon: "trending_flat",
+      };
+    }
+
+    return {
+      percent,
+      state: "declining",
+      label: "Declining",
+      detail: `${delta} pts vs prior avg (${priorAvgRounded})`,
+      barClass: "bg-amber-500",
+      badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+      textClass: "text-amber-700 dark:text-amber-300",
+      icon: "trending_down",
+    };
+  })();
 
   const calendarDays = Array.from({ length: daysInMonth }, (_, idx) => {
     const day = idx + 1;
@@ -219,20 +318,26 @@ export default function CalendarProgressView({
             </div>
           </div>
           <div className="mt-4 pt-3 space-y-1.5 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3">
-            <div className="flex items-center justify-between font-label-sm text-label-sm">
-              <span className="text-on-surface-variant">
-                Progress to Next Goal
+            <div className="flex items-center justify-between gap-2 font-label-sm text-label-sm">
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${cefrProgress.badgeClass}`}>
+                <span className="material-symbols-outlined text-[14px]">
+                  {cefrProgress.icon}
+                </span>
+                {cefrProgress.label}
               </span>
-              <span className="font-semibold text-primary">
-                {cefrProgressPercent}%
+              <span className={`font-semibold ${cefrProgress.textClass}`}>
+                {cefrProgress.percent}%
               </span>
             </div>
             <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-primary h-full rounded-full transition-all duration-300"
-                style={{ width: `${cefrProgressPercent}%` }}
+                className={`${cefrProgress.barClass} h-full rounded-full transition-all duration-300`}
+                style={{ width: `${cefrProgress.percent}%` }}
               ></div>
             </div>
+            <p className="text-[11px] text-on-surface-variant">
+              {cefrProgress.detail}
+            </p>
           </div>
         </div>
       </div>

@@ -162,6 +162,9 @@ class GeneratePromptRequest(BaseModel):
 
 class GeneratePromptResponse(BaseModel):
     topic: str = Field(description="Short title or category of the writing topic in English")
+    suggested_title: str = Field(
+        description="A short, natural, engaging essay title in English matching the prompt and CEFR level"
+    )
     question: str = Field(description="Engaging writing prompt question in English tailored to the CEFR level")
     min_words: int = Field(description="Recommended minimum word count (at least 15 words)")
     tips: List[str] = Field(
@@ -273,7 +276,7 @@ async def _fetch_or_create_profile(user: Dict[str, Any], access_token: str) -> D
         body={
             "id": user_id,
             "display_name": display_name,
-            "target_cefr": "B2",
+            "target_cefr": "B1",
             "daily_word_goal": 150,
         },
         prefer="return=representation",
@@ -452,22 +455,30 @@ async def delete_entry(
 async def generate_prompt(payload: GeneratePromptRequest):
     client = get_genai_client()
     level = payload.cefr_level.strip().upper()
-    topic_instruction = (
-        f"focusing on the topic '{payload.topic.strip()}'"
-        if payload.topic and payload.topic.strip()
-        else "choosing an engaging, relevant modern topic (e.g., Work & Career, Technology, Travel, Culture, Daily Life, Environment, or Education)"
-    )
+    topic_clean = payload.topic.strip() if payload.topic else ""
+    if topic_clean.lower() in ("daily lifestyle", "lifestyle"):
+        topic_instruction = (
+            "focusing on 'Daily Lifestyle' — ask a natural, relatable question where the learner can talk about "
+            "their daily routine, what they did earlier today, what they are doing right now, or what they plan to do later today"
+        )
+    elif topic_clean:
+        topic_instruction = f"focusing on the topic '{topic_clean}'"
+    else:
+        topic_instruction = (
+            "choosing an engaging, relevant modern topic (e.g., Daily Lifestyle, Work & Career, Technology, Travel, Culture, Environment, or Education)"
+        )
 
     system_instruction = (
         "You are an expert English Writing Professor designing a daily writing prompt for an English learner. "
-        "All fields in your response (topic, question, tips) MUST be written in clear, natural English. "
+        "All fields in your response (topic, suggested_title, question, tips) MUST be written in clear, natural English. "
         "Tailor the complexity of the question and the suggested vocabulary/grammar tips to the requested CEFR level. "
         "Set min_words to 15 as the minimum required words to submit, while encouraging a full response."
     )
 
     user_prompt = (
         f"Create a daily English writing prompt for CEFR Level {level}, {topic_instruction}.\n"
-        f"- 'topic': A concise, editorial-style topic title in English.\n"
+        f"- 'topic': A concise, editorial-style topic category in English.\n"
+        f"- 'suggested_title': A short, natural, engaging essay title in English (3 to 7 words) that fits this prompt and level {level}.\n"
         f"- 'question': A clear, thought-provoking writing prompt question suitable for level {level}.\n"
         f"- 'min_words': Set to 15.\n"
         f"- 'tips': Exactly 3 actionable writing tips in simple English (e.g., useful connectors, target grammar structures, or key vocabulary for this prompt)."

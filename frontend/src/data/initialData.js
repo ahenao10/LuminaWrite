@@ -21,6 +21,7 @@ export const CEFR_LEVELS = [
 ];
 
 export const SUGGESTED_TOPICS = [
+  "Daily Lifestyle",
   "All Topics",
   "Work & Career",
   "Technology & AI",
@@ -31,16 +32,16 @@ export const SUGGESTED_TOPICS = [
 ];
 
 export const DEFAULT_PROMPT = {
-  topic: "Work & Career",
+  topic: "Daily Lifestyle",
+  suggested_title: "My Day: Past, Present, and Plans",
   question:
-    "Discuss whether remote work benefits work-life balance or leads to burnout. Support your stance with two personal examples or observations.",
+    "Describe your day today: what did you do earlier, what are you working on right now, and what are your plans for the rest of the day?",
   min_words: 15,
   tips: [
-    "Use clear transition connectors such as 'Furthermore', 'However', and 'Consequently' to structure your argument.",
-    "Maintain consistent verb tenses when shifting between general claims (present simple) and personal examples (past simple).",
-    "Support your main point with at least one concrete example from work or study life.",
+    "Use past simple for things you already did today (e.g., 'This morning I woke up early and...').",
+    "Use present continuous or present simple for what you are doing right now (e.g., 'Currently, I am studying...').",
+    "Use 'going to' or 'will' to talk about your plans for later today (e.g., 'Tonight I am going to...').",
   ],
 };
 
 export const INITIAL_JOURNAL_ENTRIES = [];
-
