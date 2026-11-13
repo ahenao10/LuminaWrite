@@ -1,7 +1,170 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../data/initialData";
 
-export default function LoginView({ onSignIn }) {
+function InteractiveDotsBackground() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return undefined;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    const spacing = 34;
+    const hoverRadius = 150;
+    const mouse = { x: -9999, y: -9999, active: false };
+    let dots = [];
+    let width = 0;
+    let height = 0;
+    let rafId = 0;
+    let lastFrameTime = 0;
+
+    const buildDots = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      dots = [];
+      const cols = Math.ceil(width / spacing) + 1;
+      const rows = Math.ceil(height / spacing) + 1;
+      const offsetX = (width - (cols - 1) * spacing) / 2;
+      const offsetY = (height - (rows - 1) * spacing) / 2;
+
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          const seed = (r * 73 + c * 137) % 100;
+          dots.push({
+            x: offsetX + c * spacing,
+            y: offsetY + r * spacing,
+            phase: (seed / 100) * Math.PI * 2,
+            speed: 0.0009 + (seed % 7) * 0.00018,
+            glow: 0,
+          });
+        }
+      }
+    };
+
+    const drawFrame = (now) => {
+      if (document.hidden) {
+        rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      // Cap at ~30fps to keep CPU/GPU usage minimal
+      if (now - lastFrameTime < 32 && !prefersReducedMotion) {
+        rafId = requestAnimationFrame(drawFrame);
+        return;
+      }
+      lastFrameTime = now;
+
+      ctx.clearRect(0, 0, width, height);
+      const isDark = document.documentElement.classList.contains("dark");
+      const baseRgb = isDark ? "139, 149, 179" : "118, 117, 134";
+      const primaryRgb = isDark ? "116, 122, 255" : "70, 72, 212";
+      const accentRgb = isDark ? "52, 211, 153" : "0, 136, 93";
+
+      for (let i = 0; i < dots.length; i += 1) {
+        const dot = dots[i];
+        const wave = prefersReducedMotion
+          ? 0.5
+          : (Math.sin(now * dot.speed + dot.phase) + 1) * 0.5;
+
+        let targetGlow = 0;
+        if (mouse.active) {
+          const dx = dot.x - mouse.x;
+          const dy = dot.y - mouse.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < hoverRadius * hoverRadius) {
+            const dist = Math.sqrt(distSq);
+            targetGlow = 1 - dist / hoverRadius;
+          }
+        }
+
+        // Smooth fade in/out for cursor trail
+        dot.glow += (targetGlow - dot.glow) * 0.18;
+
+        const baseAlpha = (isDark ? 0.14 : 0.11) + wave * (isDark ? 0.22 : 0.18);
+        const radius = 1.4 + wave * 0.5 + dot.glow * 1.9;
+
+        if (dot.glow > 0.03) {
+          const useAccent = (i % 5 === 0);
+          const rgb = useAccent ? accentRgb : primaryRgb;
+          const alpha = Math.min(0.9, baseAlpha + dot.glow * 0.65);
+
+          if (dot.glow > 0.35) {
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, radius + 3.5 * dot.glow, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${rgb}, ${(dot.glow * 0.16).toFixed(3)})`;
+            ctx.fill();
+          }
+
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${rgb}, ${alpha.toFixed(3)})`;
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${baseRgb}, ${baseAlpha.toFixed(3)})`;
+          ctx.fill();
+        }
+      }
+
+      if (!prefersReducedMotion) {
+        rafId = requestAnimationFrame(drawFrame);
+      }
+    };
+
+    const handleMouseMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.active = true;
+    };
+
+    const handleMouseLeave = () => {
+      mouse.active = false;
+    };
+
+    buildDots();
+    rafId = requestAnimationFrame(drawFrame);
+
+    window.addEventListener("resize", buildDots);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("blur", handleMouseLeave);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", buildDots);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("blur", handleMouseLeave);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="fixed inset-0 pointer-events-none z-0"
+    />
+  );
+}
+
+export default function LoginView({
+  onSignIn,
+  isDarkMode = false,
+  onToggleDarkMode,
+}) {
   const [mode, setMode] = useState("login"); // 'login' | 'signup'
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -54,7 +217,7 @@ export default function LoginView({ onSignIn }) {
     } catch (err) {
       setErrorMsg(
         err.message ||
-          `Could not connect to backend at ${API_BASE_URL}.`
+        `Could not connect to backend at ${API_BASE_URL}.`
       );
     } finally {
       setIsLoading(false);
@@ -62,10 +225,11 @@ export default function LoginView({ onSignIn }) {
   };
 
   return (
-    <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+    <div className="relative overflow-hidden bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+      <InteractiveDotsBackground />
       {/* Header */}
-      <header className="w-full bg-surface/80 backdrop-blur-xl z-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+      <header className="relative w-full bg-surface/80 backdrop-blur-xl z-20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-4 sm:py-0 sm:h-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-[0_2px_12px_rgba(96,99,238,0.25)]">
               <span className="material-symbols-outlined text-[20px]">
@@ -94,101 +258,103 @@ export default function LoginView({ onSignIn }) {
       </header>
 
       {/* Main Dual Panel Container */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 relative">
-        <div className="relative w-full max-w-6xl mx-auto my-auto">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8">
+        <div className="relative w-full max-w-lg mx-auto my-auto">
           {/* Ambient Atmospheric Glows */}
           <div className="absolute -top-16 -left-20 w-96 h-96 bg-primary-fixed/40 rounded-full blur-3xl pointer-events-none -z-10"></div>
           <div className="absolute -bottom-16 -right-20 w-96 h-96 bg-secondary-fixed/40 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-          <div className="w-full grid grid-cols-1 lg:grid-cols-12 rounded-xl bg-surface-container-lowest shadow-[0_20px_50px_rgba(70,72,212,0.07)] overflow-hidden">
-            {/* Left Panel: Editorial Showcase (5 cols) */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-surface-container-low via-surface-container to-surface-variant p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute inset-0 opacity-[0.035] pointer-events-none bg-[radial-gradient(#4648d4_1px,transparent_1px)] [background-size:16px_16px]"></div>
-
-              {/* Header / Stage Identifier */}
-              <div className="relative z-10 flex flex-col gap-2">
-                <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[14px]">
-                    auto_awesome
-                  </span>
-                  <span>Scholarly Intelligence</span>
-                </div>
-                <h2 className="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">
-                  Refining thought into{" "}
-                  <span className="italic font-display-lg text-primary">
-                    masterful
-                  </span>{" "}
-                  prose.
-                </h2>
-                <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-                  Elevate your English writing with rigorous AI coaching tailored for daily practice, essays, and CEFR certifications.
-                </p>
-              </div>
-
-              {/* Interactive Vocabulary Diff Preview Card */}
-              <div className="relative z-10 my-8 flex flex-col gap-4">
-                <div className="bg-surface-container-lowest/90 backdrop-blur-md p-4 rounded-lg shadow-sm">
-                  <div className="flex items-center justify-between pb-1.5 mb-1.5">
-                    <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px] text-tertiary">
-                        check_circle
-                      </span>
-                      Side-by-Side Precision
-                    </span>
-                    <span className="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed/30 px-1.5 py-0.5 rounded">
-                      CEFR A1–C2
-                    </span>
-                  </div>
-                  <p className="font-body-md text-body-md text-on-surface">
-                    The findings{" "}
-                    <span className="line-through text-error opacity-70 decoration-1">
-                      show that
-                    </span>{" "}
-                    <span className="bg-tertiary-container/15 text-tertiary font-medium px-1 rounded">
-                      corroborate that
-                    </span>{" "}
-                    consistent practice improves fluency.
-                  </p>
-                </div>
-
-                {/* Micro Rubric Preview */}
-                <div className="bg-surface-container-lowest/80 backdrop-blur-sm px-4 py-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <span className="material-symbols-outlined text-[18px]">
-                        insights
-                      </span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">
-                        4-Dimension Rubric
-                      </span>
-                      <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
-                        Grammar • Lexis • Cohesion
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote */}
-              <div className="relative z-10 bg-surface-container-highest/40 rounded-lg p-4">
-                <blockquote className="font-body-md text-body-md text-on-surface italic leading-snug">
-                  “Clear feedback on every sentence helps you spot patterns, fix recurring grammar slips, and write with confidence.”
-                </blockquote>
-                <div className="mt-2 flex items-center justify-between text-on-surface-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface font-medium">
-                    Lumina Write Pedagogical Engine
-                  </span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">
-                    Powered by Supabase &amp; Gemini
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="w-full grid grid-cols-1 rounded-xl bg-surface-container-lowest shadow-[0_20px_50px_rgba(70,72,212,0.07)] overflow-hidden">
+            {
+              // {/* Left Panel: Editorial Showcase (5 cols) */}
+              // <div className="lg:col-span-5 bg-gradient-to-br from-surface-container-low via-surface-container to-surface-variant p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
+              //   <div className="absolute inset-0 opacity-[0.035] pointer-events-none bg-[radial-gradient(#4648d4_1px,transparent_1px)] [background-size:16px_16px]"></div>
+              //
+              //   {/* Header / Stage Identifier */}
+              //   <div className="relative z-10 flex flex-col gap-2">
+              //     <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm uppercase tracking-wider">
+              //       <span className="material-symbols-outlined text-[14px]">
+              //         auto_awesome
+              //       </span>
+              //       <span>Scholarly Intelligence</span>
+              //     </div>
+              //     <h2 className="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">
+              //       Refining thought into{" "}
+              //       <span className="italic font-display-lg text-primary">
+              //         masterful
+              //       </span>{" "}
+              //       prose.
+              //     </h2>
+              //     <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              //       Elevate your English writing with rigorous AI coaching tailored for daily practice, essays, and CEFR certifications.
+              //     </p>
+              //   </div>
+              //
+              //   {/* Interactive Vocabulary Diff Preview Card */}
+              //   <div className="relative z-10 my-8 flex flex-col gap-4">
+              //     <div className="bg-surface-container-lowest/90 backdrop-blur-md p-4 rounded-lg shadow-sm">
+              //       <div className="flex items-center justify-between pb-1.5 mb-1.5">
+              //         <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
+              //           <span className="material-symbols-outlined text-[14px] text-tertiary">
+              //             check_circle
+              //           </span>
+              //           Side-by-Side Precision
+              //         </span>
+              //         <span className="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed/30 px-1.5 py-0.5 rounded">
+              //           CEFR A1–C2
+              //         </span>
+              //       </div>
+              //       <p className="font-body-md text-body-md text-on-surface">
+              //         The findings{" "}
+              //         <span className="line-through text-error opacity-70 decoration-1">
+              //           show that
+              //         </span>{" "}
+              //         <span className="bg-tertiary-container/15 text-tertiary font-medium px-1 rounded">
+              //           corroborate that
+              //         </span>{" "}
+              //         consistent practice improves fluency.
+              //       </p>
+              //     </div>
+              //
+              //     {/* Micro Rubric Preview */}
+              //     <div className="bg-surface-container-lowest/80 backdrop-blur-sm px-4 py-3 rounded-lg flex items-center justify-between">
+              //       <div className="flex items-center gap-3">
+              //         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              //           <span className="material-symbols-outlined text-[18px]">
+              //             insights
+              //           </span>
+              //         </div>
+              //         <div className="flex flex-col">
+              //           <span className="font-label-sm text-label-sm text-on-surface-variant">
+              //             4-Dimension Rubric
+              //           </span>
+              //           <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
+              //             Grammar • Lexis • Cohesion
+              //           </span>
+              //         </div>
+              //       </div>
+              //     </div>
+              //   </div>
+              //
+              //   {/* Quote */}
+              //   <div className="relative z-10 bg-surface-container-highest/40 rounded-lg p-4">
+              //     <blockquote className="font-body-md text-body-md text-on-surface italic leading-snug">
+              //       “Clear feedback on every sentence helps you spot patterns, fix recurring grammar slips, and write with confidence.”
+              //     </blockquote>
+              //     <div className="mt-2 flex items-center justify-between text-on-surface-variant">
+              //       <span className="font-label-sm text-label-sm text-on-surface font-medium">
+              //         Lumina Write Pedagogical Engine
+              //       </span>
+              //       <span className="font-label-sm text-label-sm text-on-surface-variant">
+              //         Powered by Supabase &amp; Gemini
+              //       </span>
+              //     </div>
+              //   </div>
+              // </div>
+            }
 
             {/* Right Panel: Sign-In / Sign-Up Form (7 cols) */}
-            <div className="lg:col-span-7 p-8 lg:p-12 flex flex-col justify-center bg-surface-container-lowest">
+            <div className="w-full p-8 lg:p-10 flex flex-col justify-center bg-surface-container-lowest">
               <div className="max-w-md w-full mx-auto flex flex-col gap-5">
                 {/* Heading */}
                 <div className="flex flex-col gap-1">
@@ -335,12 +501,6 @@ export default function LoginView({ onSignIn }) {
                         Keep me signed in
                       </span>
                     </label>
-                    <div className="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm">
-                      <span className="material-symbols-outlined text-[14px] text-tertiary">
-                        shield
-                      </span>
-                      <span>RLS Protected</span>
-                    </div>
                   </div>
 
                   {/* Primary Submit Action */}
@@ -353,8 +513,8 @@ export default function LoginView({ onSignIn }) {
                       {isLoading
                         ? "Authenticating..."
                         : mode === "signup"
-                        ? "Create Account & Enter Lab"
-                        : "Sign In to Writing Lab"}
+                          ? "Create Account & Enter Lab"
+                          : "Sign In to Writing Lab"}
                     </span>
                     <span className="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">
                       arrow_forward
@@ -390,7 +550,7 @@ export default function LoginView({ onSignIn }) {
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-6">
+      <footer className="relative z-10 w-full py-6">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4 text-on-surface-variant font-label-md text-label-md">
           <p>© 2026 Lumina Write. Crafted for English writing mastery.</p>
           <div className="flex items-center gap-6">
@@ -399,6 +559,20 @@ export default function LoginView({ onSignIn }) {
           </div>
         </div>
       </footer>
+
+      {onToggleDarkMode && (
+        <button
+          type="button"
+          onClick={onToggleDarkMode}
+          aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          title={isDarkMode ? "Light mode" : "Dark mode"}
+          className="fixed bottom-5 left-5 z-30 p-2.5 rounded-xl bg-surface-container-lowest/90 backdrop-blur-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high shadow-md border border-outline-variant/40 transition-all cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[20px] block">
+            {isDarkMode ? "light_mode" : "dark_mode"}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
