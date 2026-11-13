@@ -14,3 +14,5 @@ frontend/.env
 # Archivos del sistema / IDE
 .DS_Store
 .vscode/
+
+frontend-stitch/
