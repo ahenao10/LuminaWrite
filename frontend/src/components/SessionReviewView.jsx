@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SideBySideDiff from "./SideBySideDiff";
 
 function getGradeFromScore(score) {
@@ -368,14 +368,25 @@ export default function SessionReviewView({
   onSelectEntry,
   onNavigateToPractice,
   onNavigateToJournal,
+  onSaveQuizResult,
 }) {
   const [reflectionText, setReflectionText] = useState("");
   const [reflectionSaved, setReflectionSaved] = useState(false);
 
   // 5-question Retention & Reinforcement Check state
   const [currentQIdx, setCurrentQIdx] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [checkedQuestions, setCheckedQuestions] = useState({});
+  const [answers, setAnswers] = useState(
+    () => activeEntry?.quizResult?.answers || {}
+  );
+  const [checkedQuestions, setCheckedQuestions] = useState(
+    () => activeEntry?.quizResult?.checked || {}
+  );
+
+  useEffect(() => {
+    setCurrentQIdx(0);
+    setAnswers(activeEntry?.quizResult?.answers || {});
+    setCheckedQuestions(activeEntry?.quizResult?.checked || {});
+  }, [activeEntry?.id]);
 
   if (!activeEntry || !activeEntry.evaluation) {
     return (
@@ -417,7 +428,21 @@ export default function SessionReviewView({
 
   const handleVerifyCurrentQuestion = () => {
     if (!selectedOption) return;
-    setCheckedQuestions((prev) => ({ ...prev, [currentQuestion.id]: true }));
+    const nextChecked = { ...checkedQuestions, [currentQuestion.id]: true };
+    setCheckedQuestions(nextChecked);
+
+    const nextAnswered = Object.keys(nextChecked).length;
+    const nextCorrect = PRACTICE_QUESTIONS.filter(
+      (q) => nextChecked[q.id] && answers[q.id] === q.correct
+    ).length;
+
+    onSaveQuizResult?.(activeEntry.id, {
+      correct: nextCorrect,
+      total: PRACTICE_QUESTIONS.length,
+      answered: nextAnswered,
+      answers,
+      checked: nextChecked,
+    });
   };
 
   const handleSaveReflection = () => {

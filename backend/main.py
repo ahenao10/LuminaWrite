@@ -433,6 +433,14 @@ async def create_entry(
     return {"entry": entry}
 
 
+class UpdateEntryQuizRequest(BaseModel):
+    correct: int = Field(ge=0)
+    total: int = Field(ge=1)
+    answered: int = Field(ge=0)
+    answers: Dict[str, str] = Field(default_factory=dict)
+    checked: Dict[str, bool] = Field(default_factory=dict)
+
+
 @app.delete("/api/entries/{entry_id}")
 async def delete_entry(
     entry_id: str,
@@ -445,6 +453,44 @@ async def delete_entry(
         access_token=token,
     )
     return {"deleted": True, "id": entry_id}
+
+
+@app.patch("/api/entries/{entry_id}/quiz")
+async def update_entry_quiz(
+    entry_id: str,
+    payload: UpdateEntryQuizRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    token = require_bearer_token(authorization)
+    await supabase_auth_request("GET", "/user", access_token=token)
+
+    existing_rows = await supabase_rest_request(
+        "GET",
+        f"writing_entries?id=eq.{entry_id}&select=id,rubric",
+        access_token=token,
+    )
+    if not isinstance(existing_rows, list) or len(existing_rows) == 0:
+        raise HTTPException(status_code=404, detail="Writing entry not found.")
+
+    current_rubric = existing_rows[0].get("rubric")
+    updated_rubric = dict(current_rubric) if isinstance(current_rubric, dict) else {}
+    updated_rubric["quiz_result"] = {
+        "correct": payload.correct,
+        "total": payload.total,
+        "answered": payload.answered,
+        "answers": payload.answers,
+        "checked": payload.checked,
+    }
+
+    updated = await supabase_rest_request(
+        "PATCH",
+        f"writing_entries?id=eq.{entry_id}",
+        access_token=token,
+        body={"rubric": updated_rubric},
+        prefer="return=representation",
+    )
+    entry = updated[0] if isinstance(updated, list) and updated else updated
+    return {"entry": entry}
 
 
 # ==========================================

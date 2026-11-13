@@ -479,6 +479,8 @@ export default function CalendarProgressView({
                     <div className="flex items-center justify-between pt-1">
                       <span className="font-label-sm text-label-sm text-on-surface-variant">
                         {item.words} words • {item.evaluation?.cefr_level || "Draft"}
+                        {item.quizResult?.answered > 0 &&
+                          ` • Quiz ${item.quizResult.correct}/${item.quizResult.total}`}
                       </span>
                       {item.evaluation && (
                         <button

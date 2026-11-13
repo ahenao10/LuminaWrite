@@ -365,18 +365,28 @@ export default function JournalEntriesView({
                         </div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap">
-                        {score != null ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container/15 text-tertiary font-label-md text-label-md font-bold">
-                            <span className="material-symbols-outlined text-[16px]">
-                              verified
+                        <div className="flex flex-col items-start gap-1">
+                          {score != null ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container/15 text-tertiary font-label-md text-label-md font-bold">
+                              <span className="material-symbols-outlined text-[16px]">
+                                verified
+                              </span>
+                              {score}/100
+                            </div>
+                          ) : (
+                            <span className="font-label-sm text-label-sm text-on-surface-variant">
+                              Not evaluated
                             </span>
-                            {score}/100
-                          </div>
-                        ) : (
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            Not evaluated
-                          </span>
-                        )}
+                          )}
+                          {entry.quizResult?.answered > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-[11px] font-semibold">
+                              <span className="material-symbols-outlined text-[13px]">
+                                quiz
+                              </span>
+                              Quiz {entry.quizResult.correct}/{entry.quizResult.total}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-4 whitespace-nowrap">
                         <span

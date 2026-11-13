@@ -57,6 +57,7 @@ function mapDbEntryToUi(row) {
           corrections: Array.isArray(row.corrections) ? row.corrections : [],
         }
       : null,
+    quizResult: row.rubric?.quiz_result || null,
   };
 }
 
@@ -354,6 +355,36 @@ export default function App() {
       }
     } catch (err) {
       setErrorMessage(err.message || "Could not delete entry from Supabase.");
+    }
+  };
+
+  const handleSaveQuizResult = async (entryId, quizResult) => {
+    setJournalEntries((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, quizResult } : e))
+    );
+    setActiveReviewEntry((prev) =>
+      prev && prev.id === entryId ? { ...prev, quizResult } : prev
+    );
+
+    if (!accessToken || !entryId || String(entryId).startsWith("local-")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/entries/${entryId}/quiz`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(quizResult),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to save quiz results.");
+      }
+    } catch (err) {
+      setErrorMessage(err.message || "Could not save quiz results.");
     }
   };
 
@@ -722,6 +753,7 @@ export default function App() {
               }}
               onNavigateToPractice={() => setActiveTab("daily-practice")}
               onNavigateToJournal={() => setActiveTab("journal-entries")}
+              onSaveQuizResult={handleSaveQuizResult}
             />
           )}
 
