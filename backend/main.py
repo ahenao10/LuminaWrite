@@ -79,9 +79,15 @@ async def generate_with_retry(
     contents: str,
     config: types.GenerateContentConfig,
 ):
-    """Call Gemini with fast fallback on transient 503/429/404 errors."""
-    models_to_try = [MODEL_NAME]
-    for candidate in (FALLBACK_MODEL_NAME, "gemini-3.7-flash", "gemini-3.6-flash"):
+    """Call Gemini with fast fallback on transient 503/429/404 or thinking_config errors."""
+    models_to_try: List[str] = []
+    for candidate in (
+        MODEL_NAME,
+        FALLBACK_MODEL_NAME,
+        "gemini-3.8-flash",
+        "gemini-3.6-flash",
+        "gemini-3.7-flash",
+    ):
         if candidate and candidate not in models_to_try:
             models_to_try.append(candidate)
 
@@ -97,6 +103,25 @@ async def generate_with_retry(
         except Exception as exc:
             last_exc = exc
             err_str = str(exc).upper()
+            print(f"[Gemini] {model_name} error: {exc}", flush=True)
+
+            # Retry once without thinking_config if the model doesn't support thinking_budget
+            if getattr(config, "thinking_config", None) is not None and (
+                "THINKING" in err_str or "INVALID_ARGUMENT" in err_str or "400" in err_str
+            ):
+                try:
+                    no_thinking_config = config.model_copy(update={"thinking_config": None})
+                    return await asyncio.to_thread(
+                        client.models.generate_content,
+                        model=model_name,
+                        contents=contents,
+                        config=no_thinking_config,
+                    )
+                except Exception as exc2:
+                    last_exc = exc2
+                    err_str = str(exc2).upper()
+                    print(f"[Gemini] {model_name} (no thinking) error: {exc2}", flush=True)
+
             is_retryable = (
                 "503" in err_str
                 or "UNAVAILABLE" in err_str
