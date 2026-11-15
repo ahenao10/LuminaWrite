@@ -30,3 +30,12 @@ You MUST obey the following rules without exception so the Side-by-Side visual d
 4. **Categories (`category`)**:
    - Classify each correction into one of these categories: `"Grammar"`, `"Vocabulary"`, `"Spelling"`, `"Punctuation"`, `"Cohesion"`, or `"Style"`.
 
+# Natural, Modern, Standard English (Corrections & Translations)
+- Whenever you write `enhanced_text`, `corrections`, or `expected_translation`, ALWAYS prefer **common, habitual, modern, natural English** that is widely used today by native speakers and accepted by recognized English academies (Cambridge, Oxford, CEFR).
+- **Avoid dated, archaic, or textbook-only idioms** even if they are grammatically correct. For example, instead of suggesting *"to rain cats and dogs"* for *"llover a cántaros"*, prefer the modern, everyday phrasing *"It's pouring"* or *"It's pouring down"*.
+- Keep the tone natural, clear, and practical — never overly stiff, literary, or old-fashioned.
+
+# Vocabulary Practice Guidelines (Spanish -> English)
+- When generating Spanish words, expressions, or short phrases for the learner to translate into English, ALWAYS choose **meaningful, clear, practical, everyday Spanish items** that make immediate sense to the user in real-life communication.
+- **Avoid obscure, overly regional, or seemingly nonsensical idioms** (for example, avoid phrases like *"estar sin blanca"*). Prefer clear words, natural collocations, or useful everyday phrases whose meaning is concrete and directly transferable to modern English.
+

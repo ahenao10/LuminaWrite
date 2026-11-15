@@ -1,0 +1,344 @@
+{
+  "A1": [
+    {
+      "topic": "Daily Routine",
+      "suggested_title": "My Typical Morning Routine",
+      "question": "What do you usually do in the morning from the time you wake up until you leave home or start work?",
+      "min_words": 15,
+      "tips": [
+        "Use simple present verbs like wake up, eat, drink, and go.",
+        "Use time words such as first, then, next, and after that.",
+        "Mention the time you do each activity (for example: at 7:00 a.m.)."
+      ]
+    },
+    {
+      "topic": "Food & Cooking",
+      "suggested_title": "My Favorite Meal of the Day",
+      "question": "What is your favorite food or meal, and why do you like it? Who do you usually eat it with?",
+      "min_words": 15,
+      "tips": [
+        "Use 'I like' or 'My favorite meal is...' to start clearly.",
+        "Describe the food with simple adjectives like good, fresh, warm, or sweet.",
+        "Add one sentence about when or where you eat it."
+      ]
+    },
+    {
+      "topic": "Family & Friends",
+      "suggested_title": "A Special Person in My Life",
+      "question": "Write about a good friend or family member. What is their name, what do they look like, and what do you do together?",
+      "min_words": 15,
+      "tips": [
+        "Use the verb 'to be' (is / are) to describe their personality or appearance.",
+        "Use 'he has' or 'she has' for hair, eyes, or hobbies.",
+        "Use 'we' to talk about things you enjoy doing together."
+      ]
+    },
+    {
+      "topic": "Home & Living",
+      "suggested_title": "My Favorite Room at Home",
+      "question": "Describe your home or your favorite room. What things are in it, and what do you do there?",
+      "min_words": 15,
+      "tips": [
+        "Use 'There is' for one item and 'There are' for more than one item.",
+        "Use simple prepositions like in, on, next to, and near.",
+        "Keep your sentences short and clear."
+      ]
+    },
+    {
+      "topic": "Free Time",
+      "suggested_title": "What I Do on Weekends",
+      "question": "What do you like to do on Saturdays and Sundays to relax or have fun?",
+      "min_words": 15,
+      "tips": [
+        "Use frequency words like always, usually, or sometimes.",
+        "Use 'on Saturdays' or 'at the weekend' for time.",
+        "Explain why you enjoy one of those activities."
+      ]
+    }
+  ],
+  "A2": [
+    {
+      "topic": "Travel & Places",
+      "suggested_title": "A Memorable Day Trip",
+      "question": "Write about a place you visited recently. How did you get there, what did you see, and did you enjoy it?",
+      "min_words": 15,
+      "tips": [
+        "Use past simple verbs like went, saw, visited, and stayed.",
+        "Include details about the weather, food, or people you met.",
+        "End with one sentence saying if you want to go back."
+      ]
+    },
+    {
+      "topic": "Shopping & Money",
+      "suggested_title": "The Best Thing I Bought Recently",
+      "question": "Describe something useful or fun that you bought recently. Where did you buy it, and why did you need it?",
+      "min_words": 15,
+      "tips": [
+        "Use 'because' to explain why you wanted or needed it.",
+        "Compare it with another option using words like cheaper, better, or bigger.",
+        "Mention how often you use it now."
+      ]
+    },
+    {
+      "topic": "Health & Lifestyle",
+      "suggested_title": "Staying Healthy Every Week",
+      "question": "What do you do to stay healthy? Write about your eating habits, sleep, or exercise.",
+      "min_words": 15,
+      "tips": [
+        "Use 'should' or 'try to' when talking about healthy habits.",
+        "Connect ideas with 'and', 'but', and 'so'.",
+        "Give one example of something you want to improve."
+      ]
+    },
+    {
+      "topic": "Future Plans",
+      "suggested_title": "My Plans for Next Month",
+      "question": "What are your plans for next month or your next vacation? What are you going to do?",
+      "min_words": 15,
+      "tips": [
+        "Use 'going to' for clear plans you already decided.",
+        "Use 'I hope to' or 'I would like to' for wishes.",
+        "Mention who you are going to spend time with."
+      ]
+    },
+    {
+      "topic": "Work & Studies",
+      "suggested_title": "Learning Something New",
+      "question": "Write about a skill or subject you are learning right now. Is it easy or difficult for you, and why?",
+      "min_words": 15,
+      "tips": [
+        "Use present continuous (am/is/are + -ing) for things happening now.",
+        "Use adjectives like interesting, useful, or challenging.",
+        "Explain how you practice this skill each week."
+      ]
+    }
+  ],
+  "B1": [
+    {
+      "topic": "Daily Lifestyle",
+      "suggested_title": "A Habit That Changed My Day",
+      "question": "Describe a small habit you started or changed in your daily life. Why did you decide to make that change, and how has it affected you?",
+      "min_words": 15,
+      "tips": [
+        "Use past simple to explain when and why you started.",
+        "Use present perfect (have/has + past participle) to show the result today.",
+        "Connect your ideas with 'At first', 'However', and 'As a result'."
+      ]
+    },
+    {
+      "topic": "Technology & Communication",
+      "suggested_title": "Life Without a Smartphone for a Day",
+      "question": "Imagine spending an entire day without your smartphone or social media. How would you spend your time, and what would you miss the most?",
+      "min_words": 15,
+      "tips": [
+        "Use 'would' and the second conditional (If I didn't have..., I would...).",
+        "Give two or three concrete examples of activities you could do instead.",
+        "Share your opinion on whether a break from screens is helpful."
+      ]
+    },
+    {
+      "topic": "Work & Career",
+      "suggested_title": "Qualities of a Great Teammate",
+      "question": "What makes someone a good coworker or classmate to work with? Give examples from your own experience.",
+      "min_words": 15,
+      "tips": [
+        "Use modal verbs like should, must, or have to for important qualities.",
+        "Support your points with a short example using 'For instance'.",
+        "Organize your answer into clear, connected sentences."
+      ]
+    },
+    {
+      "topic": "Travel & Culture",
+      "suggested_title": "Trying Something Unfamiliar Abroad",
+      "question": "Would you rather visit a famous tourist city or a quiet local town? Explain your reasons and what kind of experience you prefer.",
+      "min_words": 15,
+      "tips": [
+        "Use 'I would rather...' or 'I prefer... because...' to state your choice.",
+        "Contrast the two options with 'On the other hand' or 'Whereas'.",
+        "Describe one activity you would enjoy in your chosen place."
+      ]
+    },
+    {
+      "topic": "Environment & Community",
+      "suggested_title": "Making My Neighborhood Greener",
+      "question": "What is one simple improvement that could make your neighborhood cleaner or more pleasant for everyone?",
+      "min_words": 15,
+      "tips": [
+        "Explain the current problem clearly before suggesting a solution.",
+        "Use 'could' or 'might' to describe the positive impact.",
+        "Use linking phrases such as 'In addition' and 'In conclusion'."
+      ]
+    }
+  ],
+  "B2": [
+    {
+      "topic": "Work & Productivity",
+      "suggested_title": "Remote Work vs. Office Collaboration",
+      "question": "Many companies now offer hybrid or fully remote work. What are the main advantages and drawbacks of working from home compared to working in an office?",
+      "min_words": 15,
+      "tips": [
+        "Present both sides evenly using 'Although', 'Despite', and 'Nevertheless'.",
+        "Include specific vocabulary such as flexibility, isolation, and work-life balance.",
+        "End with a balanced personal conclusion."
+      ]
+    },
+    {
+      "topic": "Education & Skills",
+      "suggested_title": "Learning Through Practice vs. Theory",
+      "question": "Do people learn more effectively from formal classes or from hands-on real-world experience? Support your view with clear arguments.",
+      "min_words": 15,
+      "tips": [
+        "State your position clearly in the opening sentence.",
+        "Use relative clauses (which, where, that) to add precision.",
+        "Back up at least one claim with a realistic example."
+      ]
+    },
+    {
+      "topic": "Media & Society",
+      "suggested_title": "How Short Videos Shape Attention",
+      "question": "Short-form videos have become one of the most popular ways to consume information. How do you think they affect the way people read and focus?",
+      "min_words": 15,
+      "tips": [
+        "Use cause-and-effect connectors like 'Consequently' and 'Due to'.",
+        "Avoid repeating 'good' or 'bad'; try beneficial, distracting, or engaging.",
+        "Acknowledge one positive use alongside the main concern."
+      ]
+    },
+    {
+      "topic": "Lifestyle & Choices",
+      "suggested_title": "The Value of Slowing Down",
+      "question": "In fast-paced cities, people often feel pressured to stay busy all the time. Why is rest undervalued, and how can people build healthier boundaries?",
+      "min_words": 15,
+      "tips": [
+        "Use passive structures where natural (for example: 'rest is often seen as...').",
+        "Propose practical solutions using 'It is essential that...' or 'People ought to...'.",
+        "Maintain a thoughtful, cohesive paragraph flow."
+      ]
+    },
+    {
+      "topic": "Consumer Habits",
+      "suggested_title": "Buying Less, Choosing Better",
+      "question": "More people are choosing secondhand goods and repairing items instead of buying new ones. What drives this shift, and will it last?",
+      "min_words": 15,
+      "tips": [
+        "Discuss both financial and environmental motivations.",
+        "Use future forms or hedging language such as 'is likely to' or 'tends to'.",
+        "Check verb agreement and article usage carefully."
+      ]
+    }
+  ],
+  "C1": [
+    {
+      "topic": "Technology & Ethics",
+      "suggested_title": "Automation and Human Judgment",
+      "question": "As automated tools take over more routine decisions in healthcare, hiring, and finance, where should society draw the line for human accountability?",
+      "min_words": 15,
+      "tips": [
+        "Use nuanced modal expressions such as 'ought to be regulated' or 'may inadvertently reinforce'.",
+        "Integrate cohesive devices like 'Furthermore', 'By contrast', and 'Ultimately'.",
+        "Provide a well-reasoned stance supported by a concrete scenario."
+      ]
+    },
+    {
+      "topic": "Urban Design",
+      "suggested_title": "Designing Cities for People, Not Cars",
+      "question": "Several major cities have restricted private vehicles in central districts to prioritize walking and public transit. Evaluate the long-term trade-offs of this policy.",
+      "min_words": 15,
+      "tips": [
+        "Balance economic, accessibility, and environmental perspectives.",
+        "Use advanced collocations such as 'mitigate congestion' or 'viable alternative'.",
+        "Vary your sentence openings to maintain an engaging rhythm."
+      ]
+    },
+    {
+      "topic": "Culture & Language",
+      "suggested_title": "Does a Shared Global Language Help or Harm?",
+      "question": "Having a dominant global language makes international collaboration easier, yet it can sideline local languages. How can societies balance global connection with cultural preservation?",
+      "min_words": 15,
+      "tips": [
+        "Acknowledge the tension clearly without oversimplifying either side.",
+        "Use concession structures like 'While it is undeniable that...'.",
+        "Conclude with a forward-looking synthesis."
+      ]
+    },
+    {
+      "topic": "Information & Trust",
+      "suggested_title": "Media Literacy in the Age of Algorithms",
+      "question": "When personalized feeds determine what news people see, how does that affect public debate, and what role should schools play in teaching critical evaluation?",
+      "min_words": 15,
+      "tips": [
+        "Use precise vocabulary such as echo chamber, verify, and credibility.",
+        "Avoid informal fillers; aim for concise, authoritative phrasing.",
+        "Ensure each sentence builds logically on the previous one."
+      ]
+    },
+    {
+      "topic": "Psychology & Decision-Making",
+      "suggested_title": "Why Abundance Often Creates Anxiety",
+      "question": "Having more choices is generally seen as empowering, yet too many options can lead to decision fatigue and regret. Discuss why this happens and how individuals can counter it.",
+      "min_words": 15,
+      "tips": [
+        "Illustrate the concept with a relatable modern example.",
+        "Use participle clauses or inversion sparingly for stylistic variety.",
+        "Keep explanations clear, natural, and grounded."
+      ]
+    }
+  ],
+  "C2": [
+    {
+      "topic": "Philosophy & Progress",
+      "suggested_title": "Measuring Progress Beyond Economic Output",
+      "question": "Traditional metrics like GDP capture market activity while overlooking well-being, civic trust, and ecological resilience. Argue how modern societies should redefine national success.",
+      "min_words": 15,
+      "tips": [
+        "Frame a compelling thesis and sustain it with disciplined, idiomatic prose.",
+        "Anticipate a counterargument regarding measurability and address it directly.",
+        "Favor clarity and precision over unnecessary complexity."
+      ]
+    },
+    {
+      "topic": "Science & Public Policy",
+      "suggested_title": "Communicating Uncertainty Without Losing Trust",
+      "question": "Scientific understanding evolves as new evidence emerges, yet the public often expects definitive answers. How can institutions communicate uncertainty transparently without eroding credibility?",
+      "min_words": 15,
+      "tips": [
+        "Use subtle hedging and epistemic markers naturally.",
+        "Demonstrate lexical control with crisp, modern standard English.",
+        "End with a memorable, tightly reasoned takeaway."
+      ]
+    },
+    {
+      "topic": "Work & Identity",
+      "suggested_title": "When Careers Stop Defining Identity",
+      "question": "For generations, professional titles served as a primary marker of social standing and personal purpose. Examine how shifting career patterns are reshaping how people construct meaning.",
+      "min_words": 15,
+      "tips": [
+        "Contrast historical expectations with contemporary realities seamlessly.",
+        "Use sophisticated transitions that feel effortless rather than formulaic.",
+        "Ensure every clause contributes directly to your central argument."
+      ]
+    },
+    {
+      "topic": "Attention & Creativity",
+      "suggested_title": "Boredom as a Catalyst for Original Thought",
+      "question": "Constant stimulation has virtually eliminated idle moments from daily life. Explore what may be lost when unstructured boredom disappears and how deliberate stillness fosters creativity.",
+      "min_words": 15,
+      "tips": [
+        "Weave reflective observation with analytical insight.",
+        "Vary syntax deliberately between expansive sentences and crisp statements.",
+        "Keep vocabulary natural, contemporary, and evocative."
+      ]
+    },
+    {
+      "topic": "Global Cooperation",
+      "suggested_title": "Local Action vs. Systemic Reform",
+      "question": "On global issues like climate change, debate often splits between individual lifestyle responsibility and large-scale structural reform. Synthesize why framing them as opposites is flawed.",
+      "min_words": 15,
+      "tips": [
+        "Deconstruct the false dichotomy cleanly in your opening.",
+        "Show how individual norms and institutional incentives reinforce one another.",
+        "Maintain flawless grammatical accuracy and natural rhythm throughout."
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ActionButton from "./common/ActionButton";
 
 export default function JournalEntriesView({
   entries,
@@ -88,14 +89,15 @@ export default function JournalEntriesView({
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
+          <ActionButton
+            variant="primary"
+            size="lg"
+            icon="add"
             onClick={onNewWriting}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-all shadow-sm cursor-pointer"
+            className="px-4"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
             Create New Entry
-          </button>
+          </ActionButton>
         </div>
       </section>
 

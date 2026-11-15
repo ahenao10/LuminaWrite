@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  CEFR_FOCUS_AREAS,
-  CEFR_LEVELS,
-  SUGGESTED_TOPICS,
-} from "../data/initialData";
+import { SUGGESTED_TOPICS } from "../data/initialData";
+import ActionButton from "./common/ActionButton";
+import CefrLevelSelector from "./common/CefrLevelSelector";
+import ErrorBanner from "./common/ErrorBanner";
+import FocusAreasDropdown from "./common/FocusAreasDropdown";
+import ToastNotification from "./common/ToastNotification";
 
 const DISCOURSE_MARKERS = [
   "Furthermore, ",
@@ -37,21 +38,13 @@ export default function DailyPracticeView({
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [draftSavedToast, setDraftSavedToast] = useState(false);
   const [focusWarningToast, setFocusWarningToast] = useState(false);
-  const [isFocusMenuOpen, setIsFocusMenuOpen] = useState(false);
-  const focusMenuRef = useRef(null);
   const focusToastTimerRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        focusMenuRef.current &&
-        !focusMenuRef.current.contains(event.target)
-      ) {
-        setIsFocusMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const interval = setInterval(() => {
+      setSecondsElapsed((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -60,58 +53,6 @@ export default function DailyPracticeView({
         clearTimeout(focusToastTimerRef.current);
       }
     };
-  }, []);
-
-  const levelFocusOptions = CEFR_FOCUS_AREAS[selectedCefr] || [];
-  const isAllFocusSelected =
-    levelFocusOptions.length > 0 &&
-    levelFocusOptions.every((item) => selectedFocusAreas.includes(item));
-  const hasNoFocusSelected = selectedFocusAreas.length === 0;
-
-  const focusButtonLabel = isAllFocusSelected
-    ? "ALL"
-    : hasNoFocusSelected
-    ? "None"
-    : selectedFocusAreas.length === 1
-    ? selectedFocusAreas[0]
-    : `${selectedFocusAreas.length} selected`;
-
-  const handleToggleAllFocus = () => {
-    if (isAllFocusSelected) {
-      onSelectFocusAreas?.([]);
-    } else {
-      onSelectFocusAreas?.(levelFocusOptions);
-    }
-  };
-
-  const handleToggleSingleFocus = (item) => {
-    const exists = selectedFocusAreas.includes(item);
-    const next = exists
-      ? selectedFocusAreas.filter((f) => f !== item)
-      : [...selectedFocusAreas, item];
-    onSelectFocusAreas?.(next);
-  };
-
-  const handlePromptButtonClick = () => {
-    if (hasNoFocusSelected) {
-      setFocusWarningToast(true);
-      if (focusToastTimerRef.current) {
-        clearTimeout(focusToastTimerRef.current);
-      }
-      focusToastTimerRef.current = setTimeout(() => {
-        setFocusWarningToast(false);
-      }, 3500);
-      return;
-    }
-    setFocusWarningToast(false);
-    onGeneratePrompt();
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSecondsElapsed((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const formatTimer = (totalSec) => {
@@ -124,6 +65,7 @@ export default function DailyPracticeView({
   const wordCount = trimmedText ? trimmedText.split(/\s+/).length : 0;
   const minWordsRequired = Math.max(15, promptData?.min_words || 15);
   const meetsMinWords = wordCount >= 15;
+  const hasNoFocusSelected = selectedFocusAreas.length === 0;
 
   const sentenceCount = trimmedText
     ? trimmedText.split(/[.!?]+/).filter((s) => s.trim().length > 0).length
@@ -143,40 +85,37 @@ export default function DailyPracticeView({
     setTimeout(() => setDraftSavedToast(false), 2500);
   };
 
+  const handlePromptButtonClick = () => {
+    if (hasNoFocusSelected) {
+      setFocusWarningToast(true);
+      if (focusToastTimerRef.current) {
+        clearTimeout(focusToastTimerRef.current);
+      }
+      focusToastTimerRef.current = setTimeout(() => {
+        setFocusWarningToast(false);
+      }, 3500);
+      return;
+    }
+    setFocusWarningToast(false);
+    onGeneratePrompt();
+  };
+
   return (
     <div className="flex flex-col w-full pb-16">
-      {focusWarningToast && (
-        <div
-          role="alert"
-          className="fixed top-20 right-4 sm:right-6 z-50 bg-surface-container-lowest border border-amber-500/40 text-on-surface rounded-xl shadow-xl px-4 py-3 pr-9 flex items-center gap-2.5"
-        >
-          <span className="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400 shrink-0">
-            warning
-          </span>
-          <span className="font-body-sm text-body-sm whitespace-nowrap">
-            Please select at least one focus area to apply changes.
-          </span>
-          <button
-            type="button"
-            onClick={() => setFocusWarningToast(false)}
-            aria-label="Close notification"
-            className="absolute top-1.5 right-1.5 p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px] block">
-              close
-            </span>
-          </button>
-        </div>
-      )}
+      <ToastNotification
+        visible={focusWarningToast}
+        message="Please select at least one focus area to apply changes."
+        onClose={() => setFocusWarningToast(false)}
+      />
+
       {/* Top Daily Prompt Header & Context Card */}
       <section className="w-full mb-8 mt-4">
         <div className="relative rounded-xl bg-surface-container-lowest p-6 shadow-sm">
-          {/* Ambient gentle tint glow */}
           <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
             <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent blur-3xl"></div>
           </div>
 
-          {/* Controls Row: Badges + CEFR Level Selector + Topic + Generate Prompt Button */}
+          {/* Controls Row */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md uppercase tracking-wider">
@@ -186,93 +125,16 @@ export default function DailyPracticeView({
                 Today&apos;s AI Prompt
               </span>
 
-              {/* CEFR Level Selector */}
-              <div className="inline-flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-                <span className="font-label-sm text-label-sm text-on-surface-variant px-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-primary">
-                    school
-                  </span>
-                  CEFR:
-                </span>
-                {CEFR_LEVELS.map((lvl) => (
-                  <button
-                    key={lvl.code}
-                    type="button"
-                    onClick={() => onSelectCefr(lvl.code)}
-                    className={`px-2.5 py-1 rounded font-label-sm text-label-sm transition-all cursor-pointer ${
-                      selectedCefr === lvl.code
-                        ? "bg-primary text-on-primary font-bold shadow-xs"
-                        : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-                    }`}
-                    title={lvl.label}
-                  >
-                    {lvl.code}
-                  </button>
-                ))}
-              </div>
+              <CefrLevelSelector
+                selectedCefr={selectedCefr}
+                onSelectCefr={onSelectCefr}
+              />
 
-              {/* CEFR Focus Areas Multi-Check Dropdown */}
-              <div className="relative" ref={focusMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsFocusMenuOpen((prev) => !prev)}
-                  aria-expanded={isFocusMenuOpen}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[15px] text-primary">
-                    checklist
-                  </span>
-                  <span className="text-on-surface-variant">Focus:</span>
-                  <span className="font-semibold max-w-[140px] truncate">
-                    {focusButtonLabel}
-                  </span>
-                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
-                    {isFocusMenuOpen ? "expand_less" : "expand_more"}
-                  </span>
-                </button>
-
-                {isFocusMenuOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-64 rounded-xl bg-surface-container-lowest border border-outline-variant/40 shadow-xl p-2 z-30 flex flex-col gap-1">
-                    <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                      {selectedCefr} Practice Focus
-                    </div>
-
-                    <label className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-surface-container cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isAllFocusSelected}
-                        onChange={handleToggleAllFocus}
-                        className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-                      />
-                      <span className="font-label-md text-label-md font-semibold text-on-surface">
-                        ALL ({selectedCefr} skills)
-                      </span>
-                    </label>
-
-                    <div className="my-1 border-t border-outline-variant/30" />
-
-                    {levelFocusOptions.map((item) => {
-                      const checked = selectedFocusAreas.includes(item);
-                      return (
-                        <label
-                          key={item}
-                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-surface-container cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => handleToggleSingleFocus(item)}
-                            className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-                          />
-                          <span className="font-body-sm text-body-sm text-on-surface">
-                            {item}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <FocusAreasDropdown
+                selectedCefr={selectedCefr}
+                selectedFocusAreas={selectedFocusAreas}
+                onSelectFocusAreas={onSelectFocusAreas}
+              />
 
               {/* Optional Topic Filter */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-low text-on-surface">
@@ -309,37 +171,28 @@ export default function DailyPracticeView({
             </div>
 
             <div className="flex items-center gap-2 self-start lg:self-auto">
-              <button
-                type="button"
-                onClick={handlePromptButtonClick}
-                disabled={isGeneratingPrompt}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg disabled:opacity-60 font-label-md text-label-md transition-all shadow-sm cursor-pointer ${
-                  hasPendingPromptChanges
-                    ? `bg-tertiary text-on-tertiary hover:bg-tertiary-container ${
-                        hasNoFocusSelected ? "opacity-55" : ""
-                      }`
-                    : `bg-primary text-on-primary hover:bg-primary-container ${
-                        hasNoFocusSelected ? "opacity-55" : ""
-                      }`
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined text-[16px] ${
-                    isGeneratingPrompt ? "animate-spin" : ""
-                  }`}
-                >
-                  {isGeneratingPrompt
+              <ActionButton
+                variant={hasPendingPromptChanges ? "tertiary" : "primary"}
+                size="md"
+                icon={
+                  isGeneratingPrompt
                     ? "refresh"
                     : hasPendingPromptChanges
                     ? "check"
-                    : "refresh"}
-                </span>
+                    : "refresh"
+                }
+                iconClassName="text-[16px]"
+                spinIcon={isGeneratingPrompt}
+                dimmed={hasNoFocusSelected}
+                disabled={isGeneratingPrompt}
+                onClick={handlePromptButtonClick}
+              >
                 {isGeneratingPrompt
                   ? "Generating Prompt..."
                   : hasPendingPromptChanges
                   ? "Apply changes"
                   : "Generate New Prompt"}
-              </button>
+              </ActionButton>
             </div>
           </div>
 
@@ -355,10 +208,22 @@ export default function DailyPracticeView({
               </span>
             </div>
             <h1 className="font-headline-md text-headline-md text-on-surface tracking-tight leading-snug mb-3">
-              “{promptData?.question}”
+              {isGeneratingPrompt ? (
+                <span className="inline-flex items-center gap-2.5 text-on-surface-variant font-body-lg text-body-lg py-1">
+                  <span className="material-symbols-outlined animate-spin text-primary text-[20px]">
+                    progress_activity
+                  </span>
+                  Generating a fresh writing prompt for {selectedCefr}...
+                </span>
+              ) : promptData?.question ? (
+                `“${promptData.question}”`
+              ) : (
+                <span className="text-on-surface-variant font-body-lg text-body-lg">
+                  No prompt loaded yet. Click &quot;Generate New Prompt&quot; to get a fresh question.
+                </span>
+              )}
             </h1>
 
-            {/* Accordion Hint Box */}
             <details className="group mt-4 text-on-surface-variant" open>
               <summary className="inline-flex items-center gap-2 cursor-pointer list-none select-none font-label-md text-label-md text-primary hover:text-primary-container transition-colors">
                 <span className="material-symbols-outlined text-[18px] transition-transform duration-200 group-open:rotate-90">
@@ -385,25 +250,12 @@ export default function DailyPracticeView({
         </div>
       </section>
 
-      {/* Error Alert Banner if API call fails */}
-      {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-error-container text-on-error-container flex items-center gap-3 shadow-xs">
-          <span className="material-symbols-outlined text-[22px] text-error">
-            error
-          </span>
-          <div className="flex-1 font-body-md text-body-md">
-            <strong className="font-semibold">Error: </strong>
-            {errorMessage}
-          </div>
-        </div>
-      )}
+      <ErrorBanner message={errorMessage} />
 
       {/* Main Asymmetric Workspace & Real-time AI Assistant Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        {/* Left Area: Rich Writing Canvas (7 cols on 12-col desktop) */}
         <section className="xl:col-span-7 flex flex-col gap-4">
           <div className="rounded-xl bg-surface-container-lowest p-6 lg:p-8 shadow-sm flex flex-col min-h-[480px] relative">
-            {/* Document Meta / Title Input */}
             <div className="mb-5 pb-4 border-b border-surface-container flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -434,7 +286,6 @@ export default function DailyPracticeView({
               />
             </div>
 
-            {/* Distraction-free Writing Canvas */}
             <textarea
               value={userText}
               onChange={(e) => onChangeUserText(e.target.value)}
@@ -443,7 +294,6 @@ export default function DailyPracticeView({
               spellCheck="true"
             />
 
-            {/* Bottom status bar inside canvas */}
             <div className="mt-4 pt-4 border-t border-surface-container flex flex-wrap items-center justify-between gap-3 text-on-surface-variant font-label-md text-label-md">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1.5">
@@ -467,7 +317,6 @@ export default function DailyPracticeView({
 
           {/* Editor Metrics & Submission Footer Card */}
           <div className="rounded-xl bg-surface-container-low p-4 lg:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Live linguistic progress metrics */}
             <div className="flex flex-wrap items-center gap-5">
               <div className="flex flex-col">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -514,21 +363,24 @@ export default function DailyPracticeView({
               </div>
             </div>
 
-            {/* Action CTA buttons */}
             <div className="flex items-center gap-2.5 self-end md:self-auto">
-              <button
-                type="button"
-                onClick={handleSaveDraftClick}
+              <ActionButton
+                variant="highest"
+                size="lg"
                 disabled={wordCount === 0}
-                className="px-4 py-2.5 rounded-lg bg-surface-container-highest hover:bg-surface-dim disabled:opacity-50 text-on-surface font-label-lg text-label-lg transition-colors cursor-pointer"
+                onClick={handleSaveDraftClick}
+                className="px-4"
               >
                 Save as Draft
-              </button>
-              <button
-                type="button"
-                onClick={onEvaluate}
+              </ActionButton>
+              <ActionButton
+                variant="primary"
+                size="lg"
+                icon={isEvaluating ? "progress_activity" : "send"}
+                iconPosition="right"
+                spinIcon={isEvaluating}
                 disabled={!meetsMinWords || isEvaluating}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed text-on-primary font-label-lg text-label-lg shadow-sm hover:shadow transition-all group cursor-pointer"
+                onClick={onEvaluate}
                 title={
                   !meetsMinWords
                     ? "Please write at least 15 words to evaluate"
@@ -540,23 +392,13 @@ export default function DailyPracticeView({
                     ? "Evaluating with AI..."
                     : "Submit for AI Evaluation"}
                 </span>
-                <span
-                  className={`material-symbols-outlined text-[18px] ${
-                    isEvaluating
-                      ? "animate-spin"
-                      : "group-hover:translate-x-0.5 transition-transform"
-                  }`}
-                >
-                  {isEvaluating ? "progress_activity" : "send"}
-                </span>
-              </button>
+              </ActionButton>
             </div>
           </div>
         </section>
 
-        {/* Right Area: Real-Time AI Pedagogical Inspector (5 cols on desktop) */}
+        {/* Right Area: Real-Time AI Pedagogical Inspector */}
         <aside className="xl:col-span-5 flex flex-col gap-4">
-          {/* Real-time Status Card */}
           <div className="rounded-xl bg-surface-container-lowest p-5 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
@@ -580,7 +422,6 @@ export default function DailyPracticeView({
             </div>
           </div>
 
-          {/* Tone, Register & Minimum Word Goal Dial */}
           <div className="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -591,7 +432,6 @@ export default function DailyPracticeView({
               </span>
             </div>
 
-            {/* Minimum Words Progress Bar */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-label-sm font-label-sm">
                 <span className="text-on-surface">Minimum Length (15 words)</span>
@@ -613,7 +453,6 @@ export default function DailyPracticeView({
               </div>
             </div>
 
-            {/* Tone Spectrum Meter */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-label-sm font-label-sm">
                 <span className="text-on-surface">Target Register</span>
@@ -636,7 +475,6 @@ export default function DailyPracticeView({
             </div>
           </div>
 
-          {/* Interactive Discourse Markers & Connectors Block */}
           <div className="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -650,7 +488,7 @@ export default function DailyPracticeView({
               </span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Boost your Cohesion rubric score by linking your ideas with formal discourse markers:
+              Insert transition words directly into your essay to connect your ideas smoothly:
             </p>
             <div className="flex flex-wrap gap-2">
               {DISCOURSE_MARKERS.map((marker) => (
@@ -658,7 +496,7 @@ export default function DailyPracticeView({
                   key={marker}
                   type="button"
                   onClick={() => handleInsertMarker(marker)}
-                  className="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-primary-fixed text-on-surface hover:text-on-primary-fixed font-label-sm text-label-sm transition-colors cursor-pointer border border-outline-variant/30"
+                  className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
                 >
                   + {marker.trim()}
                 </button>
@@ -666,40 +504,38 @@ export default function DailyPracticeView({
             </div>
           </div>
 
-          {/* AI Socratic Follow-Up / Prompt Challenger Card */}
-          <div className="rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container p-5 shadow-sm relative overflow-hidden">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="rounded-xl bg-surface-container-lowest p-5 shadow-sm space-y-3">
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[20px]">
-                psychology
+                tips_and_updates
               </span>
-              <span className="font-label-sm text-label-sm text-primary uppercase font-bold tracking-wider">
-                Coach Challenge
-              </span>
+              <h3 className="font-label-lg text-label-lg text-on-surface">
+                How Evaluation Works
+              </h3>
             </div>
-            <h4 className="font-headline-sm text-headline-sm text-on-surface text-[1.1rem] leading-snug mb-2">
-              “Have you considered a counter-argument or concrete real-world example?”
-            </h4>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-3">
-              Addressing both sides of the topic and illustrating your claim with a specific observation significantly increases Task Achievement.
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                handleInsertMarker(
-                  "\n\nOn the other hand, some people argue that "
-                )
-              }
-              className="text-primary hover:text-primary-container font-label-md text-label-md inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
-            >
-              <span>Insert counterpoint template</span>
-              <span className="material-symbols-outlined text-[16px]">
-                add_circle_outline
-              </span>
-            </button>
+            <ul className="space-y-2 text-body-sm font-body-sm text-on-surface-variant">
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">1.</span>
+                <span>
+                  Write at least <strong>15 words</strong> answering the prompt above.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">2.</span>
+                <span>
+                  Click <strong>Submit for AI Evaluation</strong> to lock your answer and open your <strong>Session Review</strong>.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary font-bold">3.</span>
+                <span>
+                  Hover over underlined phrases in the review to see why each correction was made, then complete the 5-question practice quiz.
+                </span>
+              </li>
+            </ul>
           </div>
         </aside>
       </div>
     </div>
   );
 }
-

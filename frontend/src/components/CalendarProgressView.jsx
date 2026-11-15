@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ActionButton from "./common/ActionButton";
 
 export default function CalendarProgressView({
   entries = [],
@@ -19,8 +20,34 @@ export default function CalendarProgressView({
   const [selectedDay, setSelectedDay] = useState(todayDate);
 
   // Compute real stats starting from 0
-  const totalWords = entries.reduce((acc, e) => acc + (e.words || 0), 0);
   const reviewedEntries = entries.filter((e) => e.evaluation != null);
+
+  const countEntryCorrectWords = (entry) => {
+    const words = entry.words || 0;
+    if (words <= 0) return 0;
+    const score = entry.evaluation?.score ?? 0;
+
+    if (entry.entryType === "vocabulary") {
+      return score >= 65 ? words : 0;
+    }
+
+    const corrections = Array.isArray(entry.evaluation?.corrections)
+      ? entry.evaluation.corrections
+      : [];
+    if (corrections.length === 0) {
+      return Math.round(words * (score / 100));
+    }
+    const errorWords = corrections.reduce((sum, c) => {
+      const orig = (c.original_phrase || "").trim();
+      return sum + (orig ? orig.split(/\s+/).length : 0);
+    }, 0);
+    return Math.max(0, words - Math.min(words, errorWords));
+  };
+
+  const totalCorrectWords = reviewedEntries.reduce(
+    (acc, e) => acc + countEntryCorrectWords(e),
+    0
+  );
 
   // Group all entries by dayOfMonth
   const entriesByDay = {};
@@ -40,6 +67,9 @@ export default function CalendarProgressView({
   // Active streak only counts days where the mandatory daily writing activity was completed
   const activeDaysLogged = writingDaysSet.size;
   const activeStreak = activeDaysLogged;
+  const daysPracticed = Object.keys(entriesByDay).length;
+  const avgCorrectWordsPerDay =
+    daysPracticed > 0 ? Math.round(totalCorrectWords / daysPracticed) : 0;
   const monthlyTarget = 25;
   const monthlyPercent = Math.min(
     100,
@@ -288,19 +318,19 @@ export default function CalendarProgressView({
           </div>
         </div>
 
-        {/* Total Words Logged */}
+        {/* Average Correct Words Used Per Day */}
         <div className="p-5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-                Total Words
+                Avg Correct Words / Day
               </span>
-              <div className="flex items-baseline gap-1">
+              <div className="flex items-baseline gap-1.5">
                 <span className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-                  {totalWords.toLocaleString()}
+                  {avgCorrectWordsPerDay.toLocaleString()}
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant font-medium">
-                  words
+                  words/day
                 </span>
               </div>
             </div>
@@ -312,11 +342,10 @@ export default function CalendarProgressView({
           </div>
           <div className="mt-4 pt-3 flex items-center justify-between text-on-surface-variant bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3">
             <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
-              {entries.length}{" "}
-              {entries.length === 1 ? "exercise" : "exercises"} saved
+              {totalCorrectWords.toLocaleString()} correct words
             </span>
             <span className="font-label-sm text-label-sm text-on-surface-variant">
-              Writing Lab
+              {daysPracticed} {daysPracticed === 1 ? "day" : "days"} practiced
             </span>
           </div>
         </div>
@@ -559,16 +588,15 @@ export default function CalendarProgressView({
                   Complete a writing prompt in Daily Practice to save your answer and feedback to this day.
                 </p>
               </div>
-              <button
-                type="button"
+              <ActionButton
+                variant="primary"
+                size="md"
+                icon="edit_note"
                 onClick={onStartWriting}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+                className="w-full py-2.5 font-semibold"
               >
-                <span className="material-symbols-outlined text-[18px]">
-                  edit_note
-                </span>
                 <span>Start Writing</span>
-              </button>
+              </ActionButton>
             </div>
           )}
 

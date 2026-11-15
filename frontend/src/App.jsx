@@ -5,12 +5,27 @@ import JournalEntriesView from "./components/JournalEntriesView";
 import LoginView from "./components/LoginView";
 import SessionReviewView from "./components/SessionReviewView";
 import VocabularyPracticeView from "./components/VocabularyPracticeView";
+import AppHeader from "./components/layout/AppHeader";
+import AppSidebar from "./components/layout/AppSidebar";
 import {
   API_BASE_URL,
   CEFR_FOCUS_AREAS,
   CEFR_LEVELS,
-  DEFAULT_PROMPT,
 } from "./data/initialData";
+import defaultPromptsByCefr from "./data/defaultPrompts.json";
+
+function getRandomDefaultPrompt(cefrLevel = "B1") {
+  const pool = defaultPromptsByCefr[cefrLevel] || defaultPromptsByCefr.B1 || [];
+  if (pool.length === 0) return null;
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  return {
+    topic: chosen.topic,
+    suggested_title: chosen.suggested_title,
+    question: chosen.question,
+    min_words: Math.max(15, chosen.min_words || 15),
+    tips: Array.isArray(chosen.tips) ? chosen.tips : [],
+  };
+}
 
 function formatEntryDate(isoDate) {
   if (!isoDate) return "Just now";
@@ -105,13 +120,11 @@ export default function App() {
     () => CEFR_FOCUS_AREAS.B1 || []
   );
   const [selectedTopic, setSelectedTopic] = useState("Daily Lifestyle");
-  const [promptData, setPromptData] = useState(DEFAULT_PROMPT);
+  const [promptData, setPromptData] = useState(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [hasPendingPromptChanges, setHasPendingPromptChanges] = useState(false);
 
-  const [essayTitle, setEssayTitle] = useState(
-    DEFAULT_PROMPT.suggested_title || ""
-  );
+  const [essayTitle, setEssayTitle] = useState("");
   const [userText, setUserText] = useState("");
 
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -159,13 +172,15 @@ export default function App() {
     setUserProfile(profile);
     const initialLevel = "B1";
     const initialFocus = CEFR_FOCUS_AREAS[initialLevel] || [];
+    const initialPrompt = getRandomDefaultPrompt(initialLevel);
     setSelectedCefr(initialLevel);
     setSelectedFocusAreas(initialFocus);
     setVocabCefr(initialLevel);
     setVocabFocusAreas(initialFocus);
-    await fetchEntriesFromDb(token);
-    handleGeneratePrompt(initialLevel, selectedTopic, initialFocus);
-    handleGenerateVocab(initialLevel, initialFocus);
+    setPromptData(initialPrompt);
+    setEssayTitle(initialPrompt?.suggested_title || "");
+    setUserText("");
+    fetchEntriesFromDb(token);
   };
 
   const handleSignOut = async () => {
@@ -185,7 +200,8 @@ export default function App() {
     setJournalEntries([]);
     setActiveReviewEntry(null);
     setLatestEvaluation(null);
-    setEssayTitle(DEFAULT_PROMPT.suggested_title || "");
+    setPromptData(null);
+    setEssayTitle("");
     setUserText("");
     setSelectedCefr("B1");
     setSelectedFocusAreas(CEFR_FOCUS_AREAS.B1 || []);
@@ -200,16 +216,6 @@ export default function App() {
     setVocabError("");
     setActiveTab("daily-practice");
   };
-
-  if (!accessToken) {
-    return (
-      <LoginView
-        onSignIn={handleSignIn}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
-      />
-    );
-  }
 
   const handleGeneratePrompt = async (
     overrideLevel,
@@ -232,18 +238,23 @@ export default function App() {
     setErrorMessage("");
     setUserText("");
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const body = {
         cefr_level: levelToUse,
         topic: topicToUse === "All Topics" ? null : topicToUse,
         focus_areas:
           isAllFocus || focusToUse.length === 0 ? null : focusToUse,
+        previous_question: promptData?.question || null,
       };
 
       const res = await fetch(`${API_BASE_URL}/api/generate-prompt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -269,10 +280,13 @@ export default function App() {
       setHasPendingPromptChanges(false);
     } catch (err) {
       setErrorMessage(
-        err.message ||
-          `Could not connect to backend at ${API_BASE_URL}. Make sure the API server is running.`
+        err.name === "AbortError"
+          ? "Request timed out while generating a prompt. Please try again."
+          : err.message ||
+              `Could not connect to backend at ${API_BASE_URL}. Make sure the API server is running.`
       );
     } finally {
+      clearTimeout(timeoutId);
       setIsGeneratingPrompt(false);
     }
   };
@@ -620,9 +634,8 @@ export default function App() {
 
   const handleStartNewWriting = () => {
     setEssayTitle(
-      promptData.suggested_title ||
-        DEFAULT_PROMPT.suggested_title ||
-        `${promptData.topic || "Writing Practice"} — ${selectedCefr} Essay`
+      promptData?.suggested_title ||
+        `${promptData?.topic || "Writing Practice"} — ${selectedCefr} Essay`
     );
     setUserText("");
     setLatestEvaluation(null);
@@ -649,298 +662,53 @@ export default function App() {
   const displayUserLabel =
     userProfile?.display_name || currentUser?.email || "Learner";
 
+  const handleSelectTab = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === "vocabulary-practice") {
+      handleGenerateVocab(vocabCefr, vocabFocusAreas);
+    }
+  };
+
+  if (!accessToken) {
+    return (
+      <LoginView
+        onSignIn={handleSignIn}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface font-body-md text-on-surface">
-      {/* Left Fixed Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-low z-50 hidden md:flex flex-col justify-between py-6 px-4 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="flex flex-col gap-6">
-          {/* Brand Header */}
-          <div
-            onClick={() => setActiveTab("daily-practice")}
-            className="flex items-center gap-3 px-3 cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
-              <span className="material-symbols-outlined text-[20px]">
-                edit_note
-              </span>
-            </div>
-            <span className="font-headline-sm text-headline-sm text-on-surface tracking-tight">
-              Lumina Write
-            </span>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex flex-col gap-1.5">
-            <button
-              type="button"
-              onClick={() => setActiveTab("daily-practice")}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
-                activeTab === "daily-practice"
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                edit_note
-              </span>
-              <span className="font-label-lg text-label-lg">Daily Practice</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("vocabulary-practice")}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
-                activeTab === "vocabulary-practice"
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                translate
-              </span>
-              <span className="font-label-lg text-label-lg">Vocabulary</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("session-review")}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
-                activeTab === "session-review"
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px]">
-                  rate_review
-                </span>
-                <span className="font-label-lg text-label-lg">
-                  Session Review
-                </span>
-              </span>
-              {latestEvaluation && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary text-on-tertiary">
-                  {latestEvaluation.score}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("journal-entries")}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
-                activeTab === "journal-entries"
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px]">
-                  menu_book
-                </span>
-                <span className="font-label-lg text-label-lg">
-                  Journal Entries
-                </span>
-              </span>
-              <span className="font-label-sm text-label-sm opacity-75">
-                {journalEntries.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("calendar-and-progress")}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
-                activeTab === "calendar-and-progress"
-                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                calendar_month
-              </span>
-              <span className="font-label-lg text-label-lg">
-                Calendar &amp; Progress
-              </span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Bottom Writing Goal Card & Sign Out */}
-        <div className="flex flex-col gap-3 px-2">
-          <div className="p-3.5 rounded-xl bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                Writing Goal
-              </span>
-              <span className="font-label-sm text-label-sm text-primary font-bold">
-                {Math.min(5, uniqueDaysLogged)}/5 Days
-              </span>
-            </div>
-            <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-primary h-full rounded-full transition-all duration-300"
-                style={{ width: `${goalProgressPercent}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex-1 flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px]">logout</span>
-              <span className="font-label-md text-label-md">Sign Out</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDarkMode((prev) => !prev)}
-              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-              title={isDarkMode ? "Light mode" : "Dark mode"}
-              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer shrink-0"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {isDarkMode ? "light_mode" : "dark_mode"}
-              </span>
-            </button>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        latestEvaluationScore={latestEvaluation?.score}
+        journalCount={journalEntries.length}
+        uniqueDaysLogged={uniqueDaysLogged}
+        goalProgressPercent={goalProgressPercent}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
+        onSignOut={handleSignOut}
+      />
 
       {/* Main Content Area */}
       <div className="md:pl-64">
-        {/* Top Fixed Header */}
-        <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 pl-4 pr-16 md:px-4 lg:px-gutter-lg flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-surface-container text-on-surface shrink-0">
-              <span className="text-sm sm:text-base leading-none">🔥</span>
-              <span className="font-label-md text-xs sm:text-label-md font-semibold">
-                {uniqueDaysLogged} {uniqueDaysLogged === 1 ? "Day" : "Days"}
-                <span className="hidden sm:inline"> Streak</span>
-              </span>
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-tertiary-container/15 text-tertiary min-w-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0"></span>
-              <span className="font-label-md text-xs sm:text-label-md font-semibold truncate">
-                <span className="sm:hidden">{currentCefrObj.code}</span>
-                <span className="hidden sm:inline">{currentCefrObj.label}</span>
-              </span>
-            </div>
-            <span className="hidden xl:inline-block font-label-sm text-label-sm text-on-surface-variant">
-              {displayUserLabel}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {activeTab === "calendar-and-progress" && (
-              <button
-                type="button"
-                onClick={handleStartNewWriting}
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                <span className="font-label-lg text-label-lg hidden sm:inline">
-                  New Writing
-                </span>
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* Mobile Floating Top-Right Navigation Menu */}
-        <div className="md:hidden">
-          {isMobileMenuOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
-              onClick={() => setIsMobileMenuOpen(false)}
-              aria-hidden="true"
-            />
-          )}
-
-          <div className="fixed top-3 right-3 z-50 flex flex-col items-end">
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              aria-label="Open navigation menu"
-              aria-expanded={isMobileMenuOpen}
-              className="w-10 h-10 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center hover:bg-primary-container transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[22px]">
-                {isMobileMenuOpen ? "close" : "menu"}
-              </span>
-            </button>
-
-            {isMobileMenuOpen && (
-              <div className="mt-2 w-56 rounded-2xl bg-surface-container-lowest border border-outline-variant/40 shadow-xl p-2 flex flex-col gap-1">
-                {[
-                  { id: "daily-practice", label: "Practice", icon: "edit_square" },
-                  { id: "vocabulary-practice", label: "Vocabulary", icon: "translate" },
-                  { id: "session-review", label: "Review", icon: "fact_check" },
-                  { id: "journal-entries", label: "Journal", icon: "book_2" },
-                  {
-                    id: "calendar-and-progress",
-                    label: "Calendar & Progress",
-                    icon: "calendar_month",
-                  },
-                ].map((item) => {
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveTab(item.id);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
-                        isActive
-                          ? "bg-primary text-on-primary font-semibold"
-                          : "text-on-surface hover:bg-surface-container-high"
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[20px]">
-                        {item.icon}
-                      </span>
-                      <span className="text-sm">{item.label}</span>
-                    </button>
-                  );
-                })}
-
-                <div className="my-1 border-t border-outline-variant/30" />
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleSignOut();
-                    }}
-                    className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      logout
-                    </span>
-                    <span>Sign Out</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsDarkMode((prev) => !prev)}
-                    aria-label={
-                      isDarkMode ? "Switch to light mode" : "Switch to dark mode"
-                    }
-                    className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[18px] block">
-                      {isDarkMode ? "light_mode" : "dark_mode"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <AppHeader
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          uniqueDaysLogged={uniqueDaysLogged}
+          currentCefrObj={currentCefrObj}
+          displayUserLabel={displayUserLabel}
+          onStartNewWriting={handleStartNewWriting}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
+          onSignOut={handleSignOut}
+        />
 
         {/* View Container */}
         <main className="w-full pt-16 bg-surface px-4 sm:px-space-xl max-w-[1440px] mx-auto">
@@ -1006,6 +774,9 @@ export default function App() {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               onNavigateToPractice={() => setActiveTab("daily-practice")}
+              onNavigateToVocabulary={() =>
+                handleSelectTab("vocabulary-practice")
+              }
               onNavigateToJournal={() => setActiveTab("journal-entries")}
               onSaveQuizResult={handleSaveQuizResult}
             />

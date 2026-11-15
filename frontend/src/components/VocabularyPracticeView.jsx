@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CEFR_FOCUS_AREAS, CEFR_LEVELS } from "../data/initialData";
+import ActionButton from "./common/ActionButton";
+import CefrLevelSelector from "./common/CefrLevelSelector";
+import ErrorBanner from "./common/ErrorBanner";
+import FocusAreasDropdown from "./common/FocusAreasDropdown";
+import ToastNotification from "./common/ToastNotification";
 
 const ACCURACY_STYLES = {
   low: {
@@ -43,23 +47,17 @@ export default function VocabularyPracticeView({
   errorMessage,
 }) {
   const [focusWarningToast, setFocusWarningToast] = useState(false);
-  const [isFocusMenuOpen, setIsFocusMenuOpen] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const focusMenuRef = useRef(null);
   const focusToastTimerRef = useRef(null);
 
+  const isHintReady =
+    !isGeneratingVocab &&
+    Boolean(vocabItem?.spanish_text) &&
+    Boolean(vocabItem?.hint);
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        focusMenuRef.current &&
-        !focusMenuRef.current.contains(event.target)
-      ) {
-        setIsFocusMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    setShowHint(false);
+  }, [isGeneratingVocab, vocabItem?.spanish_text]);
 
   useEffect(() => {
     return () => {
@@ -73,35 +71,7 @@ export default function VocabularyPracticeView({
     setShowHint(false);
   }, [vocabItem?.spanish_text]);
 
-  const levelFocusOptions = CEFR_FOCUS_AREAS[selectedCefr] || [];
-  const isAllFocusSelected =
-    levelFocusOptions.length > 0 &&
-    levelFocusOptions.every((item) => selectedFocusAreas.includes(item));
   const hasNoFocusSelected = selectedFocusAreas.length === 0;
-
-  const focusButtonLabel = isAllFocusSelected
-    ? "ALL"
-    : hasNoFocusSelected
-    ? "None"
-    : selectedFocusAreas.length === 1
-    ? selectedFocusAreas[0]
-    : `${selectedFocusAreas.length} selected`;
-
-  const handleToggleAllFocus = () => {
-    if (isAllFocusSelected) {
-      onSelectFocusAreas?.([]);
-    } else {
-      onSelectFocusAreas?.(levelFocusOptions);
-    }
-  };
-
-  const handleToggleSingleFocus = (item) => {
-    const exists = selectedFocusAreas.includes(item);
-    const next = exists
-      ? selectedFocusAreas.filter((f) => f !== item)
-      : [...selectedFocusAreas, item];
-    onSelectFocusAreas?.(next);
-  };
 
   const handleApplyButtonClick = () => {
     if (hasNoFocusSelected) {
@@ -124,29 +94,11 @@ export default function VocabularyPracticeView({
 
   return (
     <div className="flex flex-col w-full pb-16">
-      {focusWarningToast && (
-        <div
-          role="alert"
-          className="fixed top-20 right-4 sm:right-6 z-50 bg-surface-container-lowest border border-amber-500/40 text-on-surface rounded-xl shadow-xl px-4 py-3 pr-9 flex items-center gap-2.5"
-        >
-          <span className="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400 shrink-0">
-            warning
-          </span>
-          <span className="font-body-sm text-body-sm whitespace-nowrap">
-            Please select at least one focus area to apply changes.
-          </span>
-          <button
-            type="button"
-            onClick={() => setFocusWarningToast(false)}
-            aria-label="Close notification"
-            className="absolute top-1.5 right-1.5 p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px] block">
-              close
-            </span>
-          </button>
-        </div>
-      )}
+      <ToastNotification
+        visible={focusWarningToast}
+        message="Please select at least one focus area to apply changes."
+        onClose={() => setFocusWarningToast(false)}
+      />
 
       {/* Top Controls Card */}
       <section className="w-full mb-8 mt-4">
@@ -164,138 +116,47 @@ export default function VocabularyPracticeView({
                 Vocabulary Practice
               </span>
 
-              {/* CEFR Level Selector */}
-              <div className="inline-flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
-                <span className="font-label-sm text-label-sm text-on-surface-variant px-2 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px] text-primary">
-                    school
-                  </span>
-                  CEFR:
-                </span>
-                {CEFR_LEVELS.map((lvl) => (
-                  <button
-                    key={lvl.code}
-                    type="button"
-                    onClick={() => onSelectCefr(lvl.code)}
-                    className={`px-2.5 py-1 rounded font-label-sm text-label-sm transition-all cursor-pointer ${
-                      selectedCefr === lvl.code
-                        ? "bg-primary text-on-primary font-bold shadow-xs"
-                        : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-                    }`}
-                    title={lvl.label}
-                  >
-                    {lvl.code}
-                  </button>
-                ))}
-              </div>
+              <CefrLevelSelector
+                selectedCefr={selectedCefr}
+                onSelectCefr={onSelectCefr}
+              />
 
-              {/* Focus Area Multi-Check Dropdown */}
-              <div className="relative" ref={focusMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsFocusMenuOpen((prev) => !prev)}
-                  aria-expanded={isFocusMenuOpen}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[15px] text-primary">
-                    checklist
-                  </span>
-                  <span className="text-on-surface-variant">Focus:</span>
-                  <span className="font-semibold max-w-[140px] truncate">
-                    {focusButtonLabel}
-                  </span>
-                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
-                    {isFocusMenuOpen ? "expand_less" : "expand_more"}
-                  </span>
-                </button>
-
-                {isFocusMenuOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-64 rounded-xl bg-surface-container-lowest border border-outline-variant/40 shadow-xl p-2 z-30 flex flex-col gap-1">
-                    <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                      {selectedCefr} Practice Focus
-                    </div>
-
-                    <label className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-surface-container cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isAllFocusSelected}
-                        onChange={handleToggleAllFocus}
-                        className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-                      />
-                      <span className="font-label-md text-label-md font-semibold text-on-surface">
-                        ALL ({selectedCefr} skills)
-                      </span>
-                    </label>
-
-                    <div className="my-1 border-t border-outline-variant/30" />
-
-                    {levelFocusOptions.map((item) => {
-                      const checked = selectedFocusAreas.includes(item);
-                      return (
-                        <label
-                          key={item}
-                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-surface-container cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => handleToggleSingleFocus(item)}
-                            className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-                          />
-                          <span className="font-body-sm text-body-sm text-on-surface">
-                            {item}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <FocusAreasDropdown
+                selectedCefr={selectedCefr}
+                selectedFocusAreas={selectedFocusAreas}
+                onSelectFocusAreas={onSelectFocusAreas}
+              />
             </div>
 
             <div className="flex items-center gap-2 self-start lg:self-auto">
-              <button
-                type="button"
-                onClick={handleApplyButtonClick}
-                disabled={isGeneratingVocab}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg disabled:opacity-60 font-label-md text-label-md transition-all shadow-sm cursor-pointer ${
-                  hasPendingChanges
-                    ? `bg-tertiary text-on-tertiary hover:bg-tertiary-container ${
-                        hasNoFocusSelected ? "opacity-55" : ""
-                      }`
-                    : `bg-primary text-on-primary hover:bg-primary-container ${
-                        hasNoFocusSelected ? "opacity-55" : ""
-                      }`
-                }`}
-              >
-                <span
-                  className={`material-symbols-outlined text-[16px] ${
-                    isGeneratingVocab ? "animate-spin" : ""
-                  }`}
-                >
-                  {isGeneratingVocab
+              <ActionButton
+                variant={hasPendingChanges ? "tertiary" : "primary"}
+                size="md"
+                icon={
+                  isGeneratingVocab
                     ? "refresh"
                     : hasPendingChanges
                     ? "check"
-                    : "refresh"}
-                </span>
+                    : "refresh"
+                }
+                iconClassName="text-[16px]"
+                spinIcon={isGeneratingVocab}
+                dimmed={hasNoFocusSelected}
+                disabled={isGeneratingVocab}
+                onClick={handleApplyButtonClick}
+              >
                 {isGeneratingVocab
                   ? "Generating..."
                   : hasPendingChanges
                   ? "Apply changes"
                   : "New Expression"}
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>
       </section>
 
-      {errorMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-error-container text-on-error-container flex items-center gap-3">
-          <span className="material-symbols-outlined text-[20px]">error</span>
-          <span className="font-body-md text-body-md">{errorMessage}</span>
-        </div>
-      )}
+      <ErrorBanner message={errorMessage} />
 
       {/* Main Translation Card */}
       <section className="max-w-3xl w-full mx-auto">
@@ -311,25 +172,32 @@ export default function VocabularyPracticeView({
                 </span>
               )}
             </div>
-            {vocabItem?.hint && (
-              <button
-                type="button"
-                onClick={() => setShowHint((prev) => !prev)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[15px]">
-                  lightbulb
-                </span>
-                {showHint ? "Hide hint" : "Show hint"}
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={!isHintReady}
+              onClick={() => {
+                if (isHintReady) {
+                  setShowHint((prev) => !prev);
+                }
+              }}
+              className={`inline-flex items-center gap-1 text-xs font-semibold transition-opacity ${
+                isHintReady
+                  ? "text-primary hover:underline cursor-pointer"
+                  : "text-on-surface-variant opacity-40 cursor-not-allowed"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                lightbulb
+              </span>
+              {showHint && isHintReady ? "Hide hint" : "Show hint"}
+            </button>
           </div>
 
           <div className="space-y-2">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
               Translate into English
             </span>
-            {isGeneratingVocab ? (
+            {isGeneratingVocab || !vocabItem?.spanish_text ? (
               <div className="py-4 flex items-center gap-3 text-on-surface-variant">
                 <span className="material-symbols-outlined animate-spin text-primary">
                   progress_activity
@@ -340,7 +208,7 @@ export default function VocabularyPracticeView({
               </div>
             ) : (
               <h2 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
-                {vocabItem?.spanish_text || "Echar una mano"}
+                {vocabItem.spanish_text}
               </h2>
             )}
             {showHint && vocabItem?.hint && !isGeneratingVocab && (
@@ -440,56 +308,46 @@ export default function VocabularyPracticeView({
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons using shared ActionButton */}
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2 border-t border-surface-container">
-            <button
-              type="button"
-              onClick={onDontKnow}
+            <ActionButton
+              variant="container"
+              size="lg"
+              icon="help_outline"
               disabled={isEvaluated || isEvaluatingVocab || isGeneratingVocab}
-              className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-surface-container text-on-surface font-label-lg text-label-lg transition-all ${
-                isEvaluated
-                  ? "opacity-45 cursor-not-allowed"
-                  : "hover:bg-surface-container-high cursor-pointer disabled:opacity-50"
-              }`}
+              dimmed={isEvaluated}
+              onClick={onDontKnow}
+              className="px-4"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                help_outline
-              </span>
               I don&apos;t know
-            </button>
+            </ActionButton>
 
             {!isEvaluated ? (
-              <button
-                type="button"
-                onClick={onEvaluateVocab}
+              <ActionButton
+                variant="primary"
+                size="lg"
+                icon={isEvaluatingVocab ? "progress_activity" : "check_circle"}
+                spinIcon={isEvaluatingVocab}
                 disabled={
                   isEvaluatingVocab ||
                   isGeneratingVocab ||
                   !translationInput.trim()
                 }
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container disabled:opacity-50 font-label-lg text-label-lg transition-all shadow-sm cursor-pointer"
+                onClick={onEvaluateVocab}
               >
-                <span
-                  className={`material-symbols-outlined text-[18px] ${
-                    isEvaluatingVocab ? "animate-spin" : ""
-                  }`}
-                >
-                  {isEvaluatingVocab ? "progress_activity" : "check_circle"}
-                </span>
                 {isEvaluatingVocab ? "Evaluating..." : "Evaluate"}
-              </button>
+              </ActionButton>
             ) : (
-              <button
-                type="button"
-                onClick={onContinue}
+              <ActionButton
+                variant="tertiary"
+                size="lg"
+                icon="arrow_forward"
+                iconPosition="right"
                 disabled={isGeneratingVocab}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-tertiary text-on-tertiary hover:bg-tertiary-container disabled:opacity-60 font-label-lg text-label-lg transition-all shadow-sm cursor-pointer"
+                onClick={onContinue}
               >
                 <span>Continue</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
-              </button>
+              </ActionButton>
             )}
           </div>
         </div>

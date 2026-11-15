@@ -6,9 +6,9 @@
   --color-on-secondary: 255 255 255;
   --color-on-error: 255 255 255;
   --color-secondary: 75 65 225;
-  --color-surface-container-high: 226 231 255;
-  --color-surface-bright: 250 248 255;
-  --color-background: 250 248 255;
+  --color-surface-container-high: 217 211 250;
+  --color-surface-bright: 255 255 255;
+  --color-background: 255 255 255;
   --color-surface-tint: 73 75 214;
   --color-primary-fixed-dim: 192 193 255;
   --color-inverse-primary: 192 193 255;
@@ -17,11 +17,11 @@
   --color-on-surface: 19 27 46;
   --color-inverse-surface: 40 48 68;
   --color-on-secondary-fixed-variant: 51 35 204;
-  --color-surface-container-low: 242 243 255;
+  --color-surface-container-low: 236 232 254;
   --color-tertiary-container: 0 136 93;
   --color-primary: 70 72 212;
-  --color-surface-container-highest: 218 226 253;
-  --color-surface: 250 248 255;
+  --color-surface-container-highest: 208 201 247;
+  --color-surface: 255 255 255;
   --color-on-error-container: 147 0 10;
   --color-on-secondary-container: 255 251 255;
   --color-primary-fixed: 225 224 255;
@@ -30,7 +30,7 @@
   --color-on-tertiary-container: 0 7 3;
   --color-on-primary-container: 255 251 255;
   --color-outline-variant: 199 196 215;
-  --color-surface-container-lowest: 255 255 255;
+  --color-surface-container-lowest: 244 241 255;
   --color-inverse-on-surface: 238 240 255;
   --color-on-primary: 255 255 255;
   --color-secondary-fixed: 226 223 255;
@@ -39,7 +39,7 @@
   --color-on-primary-fixed: 7 0 108;
   --color-tertiary: 0 108 73;
   --color-primary-container: 96 99 238;
-  --color-surface-container: 234 237 255;
+  --color-surface-container: 227 222 253;
   --color-on-tertiary: 255 255 255;
   --color-on-tertiary-fixed-variant: 0 82 54;
   --color-secondary-fixed-dim: 195 192 255;
@@ -115,6 +115,11 @@ html.dark {
   #root {
     min-height: 100vh;
     width: 100%;
+  }
+
+  select option {
+    background-color: rgb(var(--color-surface-container-lowest));
+    color: rgb(var(--color-on-surface));
   }
 }
 

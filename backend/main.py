@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -161,6 +162,10 @@ class GeneratePromptRequest(BaseModel):
     focus_areas: Optional[List[str]] = Field(
         default=None,
         description="Optional specific grammar or language skills to practice",
+    )
+    previous_question: Optional[str] = Field(
+        default=None,
+        description="Previous prompt question to avoid repeating",
     )
 
 
@@ -534,9 +539,27 @@ async def generate_prompt(payload: GeneratePromptRequest):
         if focus_list
         else ""
     )
+    random_seed = random.randint(1000, 99999)
+    angles = [
+        "a recent personal experience",
+        "a practical everyday decision",
+        "a change in habits or routine",
+        "comparing two real-life options",
+        "a memorable conversation or moment",
+        "a future plan or personal goal",
+        "an unexpected challenge and how to handle it",
+        "a favorite place, activity, or tradition",
+    ]
+    chosen_angle = random.choice(angles)
+    avoid_prev = (
+        f"\n- Do NOT repeat or closely paraphrase this previous question: {payload.previous_question.strip()}"
+        if payload.previous_question and payload.previous_question.strip()
+        else ""
+    )
 
     user_prompt = (
-        f"Create a daily English writing prompt for CEFR Level {level}, {topic_instruction}.{focus_instruction}\n"
+        f"[Variation Seed #{random_seed}] Create a fresh, distinct daily English writing prompt for CEFR Level {level}, "
+        f"{topic_instruction}, framed around {chosen_angle}.{focus_instruction}{avoid_prev}\n"
         f"- 'topic': A concise, editorial-style topic category in English.\n"
         f"- 'suggested_title': A short, natural, engaging essay title in English (3 to 7 words) that fits this prompt and level {level}.\n"
         f"- 'question': A clear, thought-provoking writing prompt question suitable for level {level}.\n"
@@ -552,7 +575,7 @@ async def generate_prompt(payload: GeneratePromptRequest):
                 system_instruction=system_instruction,
                 response_mime_type="application/json",
                 response_schema=GeneratePromptResponse,
-                temperature=0.75,
+                temperature=0.95,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
@@ -709,23 +732,47 @@ async def generate_vocabulary_item(payload: VocabGenerateRequest):
         if focus_list
         else ""
     )
+    default_avoid = ["Echar de menos", "Echar una mano", "Estar sin blanca"]
     recent = [r.strip() for r in (payload.recent_items or []) if r and r.strip()][:12]
+    all_avoid = list(dict.fromkeys(default_avoid + recent))
     avoid_instruction = (
-        f"\nDo NOT repeat any of these recent Spanish items: {', '.join(recent)}."
-        if recent
-        else ""
+        f"\nDo NOT use or repeat any of these Spanish items: {', '.join(all_avoid)}."
     )
+
+    target_type = random.choice(["word", "expression", "phrase"])
+    themes = [
+        "travel and transportation",
+        "work and career",
+        "technology and communication",
+        "food and cooking",
+        "health and well-being",
+        "friendship and social life",
+        "nature and environment",
+        "shopping and money",
+        "hobbies and leisure",
+        "education and learning",
+        "feelings and emotions",
+        "daily routines",
+        "time and scheduling",
+        "weather and seasons",
+        "home and living",
+        "problem-solving and decisions",
+    ]
+    chosen_theme = random.choice(themes)
+    random_seed = random.randint(1000, 99999)
 
     system_instruction = (
         "You are an expert bilingual English-Spanish language coach. "
-        "Generate ONE useful Spanish word, everyday expression, or short phrase for an English learner to translate into English. "
+        "Generate ONE meaningful, practical, everyday Spanish word, expression, or short phrase that makes clear sense to a learner for translating into modern, natural English. "
+        "Avoid obscure, dated, overly regional, or nonsensical idioms (such as 'estar sin blanca'). "
         "Match the difficulty to the requested CEFR level and focus areas. "
         "The 'hint' must be in simple, neutral English and give context WITHOUT giving away the English translation."
     )
     user_prompt = (
-        f"Generate a Spanish word, expression, or short phrase for CEFR Level {level}{focus_instruction}.{avoid_instruction}\n"
-        f"- 'spanish_text': Natural Spanish word, expression, or short sentence.\n"
-        f"- 'item_type': 'word', 'expression', or 'phrase'.\n"
+        f"[Variation Seed #{random_seed}] Generate a Spanish {target_type} related to '{chosen_theme}' "
+        f"for CEFR Level {level}{focus_instruction}.{avoid_instruction}\n"
+        f"- 'spanish_text': Natural Spanish {target_type}.\n"
+        f"- 'item_type': '{target_type}'.\n"
         f"- 'hint': Short context hint in simple English.\n"
         f"- 'cefr_level': '{level}'."
     )
@@ -738,7 +785,7 @@ async def generate_vocabulary_item(payload: VocabGenerateRequest):
                 system_instruction=system_instruction,
                 response_mime_type="application/json",
                 response_schema=VocabGenerateResponse,
-                temperature=0.85,
+                temperature=1.0,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
@@ -772,17 +819,21 @@ async def evaluate_vocabulary_item(
     if payload.skipped:
         system_instruction = (
             "You are a supportive English coach. The learner skipped translating a Spanish item into English. "
-            "Provide the most natural English translation and a short, clear explanation in simple English. Set score to 0."
+            "Provide the most common, modern, natural English translation accepted by standard English academies "
+            "(avoid dated idioms like 'to rain cats and dogs'; prefer everyday phrasing like \"It's pouring\" or \"It's pouring down\"), "
+            "and a short, clear explanation in simple English. Set score to 0."
         )
         user_prompt = (
             f"Spanish text (CEFR {level}): {payload.spanish_text}\n"
-            "Return score = 0, expected_translation (natural English), and brief feedback explaining its meaning and usage."
+            "Return score = 0, expected_translation (common, modern, natural English), and brief feedback explaining its meaning and usage."
         )
     else:
         system_instruction = (
             "You are an accurate, fair English-Spanish translation evaluator for English learners. "
             "Grade how accurately and naturally the learner translated the Spanish text into English on a 0-100 scale. "
-            "Accept valid synonymous translations when natural and accurate. Keep feedback concise, neutral, and easy to understand."
+            "Accept valid synonymous translations when natural and accurate. For expected_translation, always provide "
+            "common, modern, everyday English accepted by standard English academies (avoid dated idioms like 'to rain cats and dogs'; "
+            "prefer natural phrasing like \"It's pouring\"). Keep feedback concise, neutral, and easy to understand."
         )
         user_prompt = (
             f"CEFR Level: {level}\n"
