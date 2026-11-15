@@ -8,6 +8,8 @@ export default function JournalEntriesView({
   onNewWriting,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("today");
+  const [activityFilter, setActivityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -21,11 +23,28 @@ export default function JournalEntriesView({
         entry.title?.toLowerCase().includes(q) ||
         entry.question?.toLowerCase().includes(q) ||
         entry.topic?.toLowerCase().includes(q);
+      const matchesDate =
+        dateFilter === "all" ||
+        entry.isToday === true ||
+        entry.dayOfMonth === new Date().getDate();
+      const isVocab = entry.entryType === "vocabulary";
+      const hasQuiz = (entry.quizResult?.answered || 0) > 0;
+      const matchesActivity =
+        activityFilter === "all" ||
+        (activityFilter === "writing" && !isVocab) ||
+        (activityFilter === "quiz" && hasQuiz) ||
+        (activityFilter === "vocabulary" && isVocab);
       const matchesStatus =
         statusFilter === "all" || entry.status === statusFilter;
       const entryCefr = entry.evaluation?.cefr_level || "B1";
       const matchesLevel = levelFilter === "all" || entryCefr === levelFilter;
-      return matchesSearch && matchesStatus && matchesLevel;
+      return (
+        matchesSearch &&
+        matchesDate &&
+        matchesActivity &&
+        matchesStatus &&
+        matchesLevel
+      );
     })
     .sort((a, b) => {
       if (sortBy === "highest") {
@@ -196,6 +215,38 @@ export default function JournalEntriesView({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Date Filter (defaults to Today) */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">
+              When:
+            </span>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-transparent text-on-surface font-label-md text-label-md font-semibold focus:outline-none cursor-pointer"
+            >
+              <option value="today">Today</option>
+              <option value="all">All Dates</option>
+            </select>
+          </div>
+
+          {/* Activity Type Filter (defaults to ALL) */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">
+              Type:
+            </span>
+            <select
+              value={activityFilter}
+              onChange={(e) => setActivityFilter(e.target.value)}
+              className="bg-transparent text-on-surface font-label-md text-label-md font-semibold focus:outline-none cursor-pointer"
+            >
+              <option value="all">ALL</option>
+              <option value="writing">Writing Responses</option>
+              <option value="quiz">5-Question Quizzes</option>
+              <option value="vocabulary">Vocabulary Practice</option>
+            </select>
+          </div>
+
           {/* Status Filter */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface">
             <span className="font-label-sm text-label-sm text-on-surface-variant">
@@ -252,6 +303,8 @@ export default function JournalEntriesView({
             type="button"
             onClick={() => {
               setSearchQuery("");
+              setDateFilter("today");
+              setActivityFilter("all");
               setStatusFilter("all");
               setLevelFilter("all");
               setSortBy("newest");

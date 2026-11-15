@@ -571,16 +571,73 @@ export default function SessionReviewView({
         </div>
       )}
 
-      {/* Main Evaluation Summary, Rubrics & Side-by-Side Diff */}
-      <EvaluationResultsPanel
-        evaluation={activeEntry.evaluation}
-        userText={activeEntry.user_text}
-        promptQuestion={activeEntry.question}
-      />
+      {/* Main Evaluation Summary: Vocabulary vs Writing */}
+      {activeEntry.entryType === "vocabulary" ? (
+        <div className="mt-8 rounded-xl bg-surface-container-lowest p-6 sm:p-8 shadow-sm flex flex-col gap-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-container pb-4">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm uppercase tracking-wider font-bold">
+                Vocabulary Practice
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold">
+                CEFR {activeEntry.evaluation.cefr_level || "B1"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 rounded-full bg-primary/15 text-primary font-label-md text-label-md font-bold uppercase">
+                Accuracy: {activeEntry.accuracy || "standard"}
+              </span>
+              <span className="font-headline-md text-headline-md font-bold text-on-surface">
+                {activeEntry.evaluation.score}/100
+              </span>
+            </div>
+          </div>
 
-      {/* Bottom Section: 5-Question Retention & Reinforcement Check + Personal Notes */}
+          <div className="space-y-1">
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+              Spanish Prompt
+            </span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">
+              {activeEntry.question}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-surface-container-low">
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant block mb-1">
+                Your Translation
+              </span>
+              <p className="font-body-lg text-body-lg text-on-surface">
+                {activeEntry.user_text}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-surface-container-low">
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-tertiary block mb-1">
+                Natural English
+              </span>
+              <p className="font-body-lg text-body-lg text-on-surface font-medium">
+                {activeEntry.evaluation.enhanced_text}
+              </p>
+            </div>
+          </div>
+
+          {activeEntry.vocabFeedback && (
+            <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              {activeEntry.vocabFeedback}
+            </p>
+          )}
+        </div>
+      ) : (
+        <EvaluationResultsPanel
+          evaluation={activeEntry.evaluation}
+          userText={activeEntry.user_text}
+          promptQuestion={activeEntry.question}
+        />
+      )}
+
+      {/* Bottom Section: 5-Question Retention & Reinforcement Check (today's writing only) + Personal Notes */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
-        {/* 5-Question Interactive Micro-Quiz */}
+        {activeEntry.entryType !== "vocabulary" && activeEntry.isToday && (
         <div className="lg:col-span-7 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-surface-container">
@@ -728,9 +785,16 @@ export default function SessionReviewView({
             </div>
           </div>
         </div>
+        )}
 
         {/* Personal Reflection Notes Container */}
-        <div className="lg:col-span-5 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+        <div
+          className={`${
+            activeEntry.entryType !== "vocabulary" && activeEntry.isToday
+              ? "lg:col-span-5"
+              : "lg:col-span-12"
+          } rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between`}
+        >
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-surface-container">
               <div className="flex items-center gap-2">

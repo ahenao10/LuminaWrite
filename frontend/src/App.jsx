@@ -4,6 +4,7 @@ import DailyPracticeView from "./components/DailyPracticeView";
 import JournalEntriesView from "./components/JournalEntriesView";
 import LoginView from "./components/LoginView";
 import SessionReviewView from "./components/SessionReviewView";
+import VocabularyPracticeView from "./components/VocabularyPracticeView";
 import {
   API_BASE_URL,
   CEFR_FOCUS_AREAS,
@@ -25,6 +26,11 @@ function formatEntryDate(isoDate) {
 
 function mapDbEntryToUi(row) {
   const createdDate = row.created_at ? new Date(row.created_at) : new Date();
+  const now = new Date();
+  const isToday =
+    createdDate.getFullYear() === now.getFullYear() &&
+    createdDate.getMonth() === now.getMonth() &&
+    createdDate.getDate() === now.getDate();
   const hasEvaluation = row.score !== null && row.score !== undefined;
   const statusLabel =
     row.status === "draft"
@@ -41,9 +47,17 @@ function mapDbEntryToUi(row) {
     question: row.prompt_question,
     date: formatEntryDate(row.created_at),
     dayOfMonth: createdDate.getDate(),
+    isToday,
     words: row.word_count || 0,
     status: statusLabel,
     user_text: row.original_text || "",
+    entryType:
+      row.rubric?.entry_type === "vocabulary" ||
+      row.topic === "Vocabulary Practice"
+        ? "vocabulary"
+        : "writing",
+    accuracy: row.rubric?.accuracy || null,
+    vocabFeedback: row.rubric?.feedback || "",
     evaluation: hasEvaluation
       ? {
           score: row.score,
@@ -107,6 +121,20 @@ export default function App() {
   const [journalEntries, setJournalEntries] = useState([]);
   const [activeReviewEntry, setActiveReviewEntry] = useState(null);
 
+  // Vocabulary Practice state
+  const [vocabCefr, setVocabCefr] = useState("B1");
+  const [vocabFocusAreas, setVocabFocusAreas] = useState(
+    () => CEFR_FOCUS_AREAS.B1 || []
+  );
+  const [hasPendingVocabChanges, setHasPendingVocabChanges] = useState(false);
+  const [vocabItem, setVocabItem] = useState(null);
+  const [isGeneratingVocab, setIsGeneratingVocab] = useState(false);
+  const [vocabTranslation, setVocabTranslation] = useState("");
+  const [isEvaluatingVocab, setIsEvaluatingVocab] = useState(false);
+  const [vocabResult, setVocabResult] = useState(null);
+  const [recentVocabItems, setRecentVocabItems] = useState([]);
+  const [vocabError, setVocabError] = useState("");
+
   const fetchEntriesFromDb = async (token) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/entries`, {
@@ -129,14 +157,15 @@ export default function App() {
     setAccessToken(token);
     setCurrentUser(user);
     setUserProfile(profile);
-    const initialLevel = profile?.target_cefr || selectedCefr;
+    const initialLevel = "B1";
     const initialFocus = CEFR_FOCUS_AREAS[initialLevel] || [];
-    if (profile?.target_cefr) {
-      setSelectedCefr(profile.target_cefr);
-    }
+    setSelectedCefr(initialLevel);
     setSelectedFocusAreas(initialFocus);
+    setVocabCefr(initialLevel);
+    setVocabFocusAreas(initialFocus);
     await fetchEntriesFromDb(token);
     handleGeneratePrompt(initialLevel, selectedTopic, initialFocus);
+    handleGenerateVocab(initialLevel, initialFocus);
   };
 
   const handleSignOut = async () => {
@@ -161,6 +190,14 @@ export default function App() {
     setSelectedCefr("B1");
     setSelectedFocusAreas(CEFR_FOCUS_AREAS.B1 || []);
     setHasPendingPromptChanges(false);
+    setVocabCefr("B1");
+    setVocabFocusAreas(CEFR_FOCUS_AREAS.B1 || []);
+    setHasPendingVocabChanges(false);
+    setVocabItem(null);
+    setVocabTranslation("");
+    setVocabResult(null);
+    setRecentVocabItems([]);
+    setVocabError("");
     setActiveTab("daily-practice");
   };
 
@@ -258,6 +295,144 @@ export default function App() {
     handleGeneratePrompt(selectedCefr, newTopic, selectedFocusAreas);
   };
 
+  const handleGenerateVocab = async (overrideLevel, overrideFocusAreas) => {
+    const levelToUse =
+      typeof overrideLevel === "string" ? overrideLevel : vocabCefr;
+    const focusToUse = Array.isArray(overrideFocusAreas)
+      ? overrideFocusAreas
+      : vocabFocusAreas;
+    const levelFocusOptions = CEFR_FOCUS_AREAS[levelToUse] || [];
+    const isAllFocus =
+      levelFocusOptions.length > 0 &&
+      focusToUse.length >= levelFocusOptions.length;
+
+    setIsGeneratingVocab(true);
+    setVocabError("");
+    setVocabTranslation("");
+    setVocabResult(null);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/vocabulary/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cefr_level: levelToUse,
+          focus_areas:
+            isAllFocus || focusToUse.length === 0 ? null : focusToUse,
+          recent_items: recentVocabItems,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData.detail || `Server responded with status ${res.status}`
+        );
+      }
+      const data = await res.json();
+      setVocabItem(data);
+      if (data.spanish_text) {
+        setRecentVocabItems((prev) => [data.spanish_text, ...prev].slice(0, 12));
+      }
+      setHasPendingVocabChanges(false);
+    } catch (err) {
+      setVocabError(
+        err.message || `Could not connect to backend at ${API_BASE_URL}.`
+      );
+    } finally {
+      setIsGeneratingVocab(false);
+    }
+  };
+
+  const handleSelectVocabCefr = (newLevel) => {
+    if (newLevel === vocabCefr) return;
+    const defaultFocus = CEFR_FOCUS_AREAS[newLevel] || [];
+    setVocabCefr(newLevel);
+    setVocabFocusAreas(defaultFocus);
+    setHasPendingVocabChanges(true);
+  };
+
+  const handleSelectVocabFocusAreas = (nextFocus) => {
+    setVocabFocusAreas(nextFocus);
+    setHasPendingVocabChanges(true);
+  };
+
+  const handleEvaluateVocab = async (skipped = false) => {
+    if (!vocabItem?.spanish_text) return;
+    const trimmed = vocabTranslation.trim();
+    if (!skipped && !trimmed) return;
+
+    setIsEvaluatingVocab(true);
+    setVocabError("");
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/vocabulary/evaluate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          spanish_text: vocabItem.spanish_text,
+          user_translation: trimmed,
+          cefr_level: vocabCefr,
+          focus_areas: vocabFocusAreas,
+          skipped,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData.detail || `Server responded with status ${res.status}`
+        );
+      }
+      const data = await res.json();
+      setVocabResult({
+        ...data,
+        skipped,
+        user_translation: trimmed,
+      });
+
+      const savedRow = data.saved_entry;
+      const newEntry = savedRow
+        ? mapDbEntryToUi(savedRow)
+        : {
+            id: `local-vocab-${Date.now()}`,
+            promptId: `Vocab #${journalEntries.length + 1}`,
+            title: `Vocab: ${vocabItem.spanish_text}`,
+            topic: "Vocabulary Practice",
+            question: vocabItem.spanish_text,
+            date: "Just now",
+            dayOfMonth: new Date().getDate(),
+            isToday: true,
+            words: trimmed ? trimmed.split(/\s+/).length : 0,
+            status: "Reviewed",
+            user_text: trimmed || "(Skipped — I don't know)",
+            entryType: "vocabulary",
+            accuracy: data.accuracy,
+            vocabFeedback: data.feedback,
+            evaluation: {
+              score: data.score,
+              cefr_level: vocabCefr,
+              rubric: {
+                entry_type: "vocabulary",
+                accuracy: data.accuracy,
+                feedback: data.feedback,
+              },
+              enhanced_text: data.expected_translation,
+              corrections: [],
+            },
+          };
+
+      setJournalEntries((prev) => [newEntry, ...prev]);
+    } catch (err) {
+      setVocabError(
+        err.message || `Could not connect to backend at ${API_BASE_URL}.`
+      );
+    } finally {
+      setIsEvaluatingVocab(false);
+    }
+  };
+
   const handleEvaluate = async () => {
     const trimmed = userText.trim();
     const words = trimmed ? trimmed.split(/\s+/).length : 0;
@@ -306,6 +481,7 @@ export default function App() {
             question: promptData.question,
             date: "Just now",
             dayOfMonth: new Date().getDate(),
+            isToday: true,
             words,
             status: "Reviewed",
             user_text: trimmed,
@@ -460,7 +636,10 @@ export default function App() {
     ) || CEFR_LEVELS[2];
 
   const uniqueDaysLogged = new Set(
-    journalEntries.map((e) => e.dayOfMonth).filter(Boolean)
+    journalEntries
+      .filter((e) => e.entryType !== "vocabulary" && e.evaluation != null)
+      .map((e) => e.dayOfMonth)
+      .filter(Boolean)
   ).size;
   const goalProgressPercent = Math.min(
     100,
@@ -505,6 +684,21 @@ export default function App() {
                 edit_note
               </span>
               <span className="font-label-lg text-label-lg">Daily Practice</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("vocabulary-practice")}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-left ${
+                activeTab === "vocabulary-practice"
+                  ? "bg-primary-container text-on-primary-container font-semibold shadow-sm"
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                translate
+              </span>
+              <span className="font-label-lg text-label-lg">Vocabulary</span>
             </button>
 
             <button
@@ -682,6 +876,7 @@ export default function App() {
               <div className="mt-2 w-56 rounded-2xl bg-surface-container-lowest border border-outline-variant/40 shadow-xl p-2 flex flex-col gap-1">
                 {[
                   { id: "daily-practice", label: "Practice", icon: "edit_square" },
+                  { id: "vocabulary-practice", label: "Vocabulary", icon: "translate" },
                   { id: "session-review", label: "Review", icon: "fact_check" },
                   { id: "journal-entries", label: "Journal", icon: "book_2" },
                   {
@@ -769,6 +964,31 @@ export default function App() {
               onEvaluate={handleEvaluate}
               onSaveDraft={handleSaveDraft}
               errorMessage={errorMessage}
+            />
+          )}
+
+          {activeTab === "vocabulary-practice" && (
+            <VocabularyPracticeView
+              vocabItem={vocabItem}
+              isGeneratingVocab={isGeneratingVocab}
+              selectedCefr={vocabCefr}
+              onSelectCefr={handleSelectVocabCefr}
+              selectedFocusAreas={vocabFocusAreas}
+              onSelectFocusAreas={handleSelectVocabFocusAreas}
+              hasPendingChanges={hasPendingVocabChanges}
+              onApplyOrRegenerate={() =>
+                handleGenerateVocab(vocabCefr, vocabFocusAreas)
+              }
+              translationInput={vocabTranslation}
+              onChangeTranslation={setVocabTranslation}
+              isEvaluatingVocab={isEvaluatingVocab}
+              vocabResult={vocabResult}
+              onEvaluateVocab={() => handleEvaluateVocab(false)}
+              onDontKnow={() => handleEvaluateVocab(true)}
+              onContinue={() =>
+                handleGenerateVocab(vocabCefr, vocabFocusAreas)
+              }
+              errorMessage={vocabError}
             />
           )}
 

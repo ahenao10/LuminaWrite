@@ -24,22 +24,48 @@ export default function CalendarProgressView({
 
   // Group all entries by dayOfMonth
   const entriesByDay = {};
+  const writingDaysSet = new Set();
   entries.forEach((entry) => {
     const day = entry.dayOfMonth;
     if (day) {
       if (!entriesByDay[day]) entriesByDay[day] = { items: [], words: 0 };
       entriesByDay[day].items.push(entry);
       entriesByDay[day].words += entry.words || 0;
+      if (entry.entryType !== "vocabulary" && entry.evaluation != null) {
+        writingDaysSet.add(day);
+      }
     }
   });
 
-  const activeDaysLogged = Object.keys(entriesByDay).length;
-  const activeStreak = activeDaysLogged > 0 ? activeDaysLogged : 0;
+  // Active streak only counts days where the mandatory daily writing activity was completed
+  const activeDaysLogged = writingDaysSet.size;
+  const activeStreak = activeDaysLogged;
   const monthlyTarget = 25;
   const monthlyPercent = Math.min(
     100,
     Math.round((activeDaysLogged / monthlyTarget) * 100)
   );
+
+  // Estimate current CEFR level objectively from average scores across evaluated activities
+  const scoredEntries = reviewedEntries.filter(
+    (e) => typeof e.evaluation?.score === "number"
+  );
+  const overallAvgScore =
+    scoredEntries.length > 0
+      ? Math.round(
+          scoredEntries.reduce((acc, e) => acc + e.evaluation.score, 0) /
+            scoredEntries.length
+        )
+      : 0;
+  const estimatedCefr = (() => {
+    if (scoredEntries.length === 0) return "B1";
+    if (overallAvgScore < 35) return "A1";
+    if (overallAvgScore < 55) return "A2";
+    if (overallAvgScore < 73) return "B1";
+    if (overallAvgScore < 85) return "B2";
+    if (overallAvgScore < 94) return "C1";
+    return "C2";
+  })();
   const cefrProgress = (() => {
     const scoresByDay = {};
     reviewedEntries.forEach((entry) => {
@@ -295,19 +321,21 @@ export default function CalendarProgressView({
           </div>
         </div>
 
-        {/* Target CEFR Level */}
+        {/* Estimated Current CEFR Level */}
         <div className="p-5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-                Target Level
+                Estimated Level
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-                  {currentCefr}
+                  {estimatedCefr}
                 </span>
                 <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-primary/10 text-primary uppercase">
-                  CEFR Goal
+                  {scoredEntries.length > 0
+                    ? `Avg ${overallAvgScore}/100`
+                    : "Default B1"}
                 </span>
               </div>
             </div>
@@ -460,9 +488,19 @@ export default function CalendarProgressView({
                     className="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-2"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-label-md text-label-md font-semibold text-on-surface truncate">
-                        {item.title}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onSelectEntryForReview(item)}
+                        className="font-label-md text-label-md font-semibold text-on-surface hover:text-primary truncate flex items-center gap-1.5 text-left cursor-pointer"
+                        title="Open in Session Review"
+                      >
+                        {item.entryType === "vocabulary" && (
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase shrink-0">
+                            Vocab
+                          </span>
+                        )}
+                        <span className="truncate hover:underline">{item.title}</span>
+                      </button>
                       {item.evaluation?.score != null ? (
                         <span className="px-2 py-0.5 rounded-full bg-tertiary-container/15 text-tertiary font-label-sm text-label-sm font-bold shrink-0">
                           {item.evaluation.score}/100
@@ -476,9 +514,19 @@ export default function CalendarProgressView({
                     <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 italic">
                       &ldquo;{item.question}&rdquo;
                     </p>
+                    {item.entryType === "vocabulary" && item.evaluation?.enhanced_text && (
+                      <p className="font-body-sm text-body-sm text-on-surface">
+                        <span className="text-on-surface-variant">Translation: </span>
+                        <span className="font-medium text-tertiary">
+                          {item.evaluation.enhanced_text}
+                        </span>
+                      </p>
+                    )}
                     <div className="flex items-center justify-between pt-1">
                       <span className="font-label-sm text-label-sm text-on-surface-variant">
-                        {item.words} words • {item.evaluation?.cefr_level || "Draft"}
+                        {item.entryType === "vocabulary"
+                          ? `Accuracy: ${(item.accuracy || "standard").toUpperCase()} • ${item.evaluation?.cefr_level || "B1"}`
+                          : `${item.words} words • ${item.evaluation?.cefr_level || "Draft"}`}
                         {item.quizResult?.answered > 0 &&
                           ` • Quiz ${item.quizResult.correct}/${item.quizResult.total}`}
                       </span>

@@ -451,9 +451,11 @@ async def delete_entry(
     authorization: Optional[str] = Header(default=None),
 ):
     token = require_bearer_token(authorization)
+    user = await supabase_auth_request("GET", "/user", access_token=token)
+    user_id = user.get("id")
     await supabase_rest_request(
         "DELETE",
-        f"writing_entries?id=eq.{entry_id}",
+        f"writing_entries?id=eq.{entry_id}&user_id=eq.{user_id}",
         access_token=token,
     )
     return {"deleted": True, "id": entry_id}
@@ -466,11 +468,12 @@ async def update_entry_quiz(
     authorization: Optional[str] = Header(default=None),
 ):
     token = require_bearer_token(authorization)
-    await supabase_auth_request("GET", "/user", access_token=token)
+    user = await supabase_auth_request("GET", "/user", access_token=token)
+    user_id = user.get("id")
 
     existing_rows = await supabase_rest_request(
         "GET",
-        f"writing_entries?id=eq.{entry_id}&select=id,rubric",
+        f"writing_entries?id=eq.{entry_id}&user_id=eq.{user_id}&select=id,rubric",
         access_token=token,
     )
     if not isinstance(existing_rows, list) or len(existing_rows) == 0:
@@ -488,7 +491,7 @@ async def update_entry_quiz(
 
     updated = await supabase_rest_request(
         "PATCH",
-        f"writing_entries?id=eq.{entry_id}",
+        f"writing_entries?id=eq.{entry_id}&user_id=eq.{user_id}",
         access_token=token,
         body={"rubric": updated_rubric},
         prefer="return=representation",
@@ -642,3 +645,221 @@ async def evaluate_writing(
             print(f"Warning: failed to persist evaluated entry to Supabase: {db_exc}")
 
     return EvaluateResponse(**data, saved_entry=saved_entry)
+
+
+# ==========================================
+# Vocabulary Practice Endpoints (ES -> EN)
+# ==========================================
+
+class VocabGenerateRequest(BaseModel):
+    cefr_level: str = Field(default="B1")
+    focus_areas: Optional[List[str]] = Field(default=None)
+    recent_items: Optional[List[str]] = Field(default=None)
+
+
+class VocabGenerateResponse(BaseModel):
+    spanish_text: str = Field(description="Word, expression, or short phrase in Spanish")
+    item_type: Literal["word", "expression", "phrase"] = Field(
+        description="Whether the item is a single word, expression, or short phrase"
+    )
+    hint: str = Field(description="Brief context hint in simple English without revealing the translation")
+    cefr_level: str
+
+
+class VocabEvaluateRequest(BaseModel):
+    spanish_text: str
+    user_translation: str = Field(default="")
+    cefr_level: str = Field(default="B1")
+    focus_areas: Optional[List[str]] = Field(default=None)
+    skipped: bool = Field(default=False)
+
+
+class VocabEvaluateAISchema(BaseModel):
+    score: int = Field(ge=0, le=100)
+    expected_translation: str = Field(description="Natural English translation of the Spanish text")
+    feedback: str = Field(description="Brief, clear explanation in simple English")
+
+
+class VocabEvaluateResponse(VocabEvaluateAISchema):
+    accuracy: Literal["low", "medium", "standard", "high"]
+    saved_entry: Optional[Dict[str, Any]] = None
+
+
+def compute_accuracy_tier(score: int) -> Literal["low", "medium", "standard", "high"]:
+    if score >= 85:
+        return "high"
+    if score >= 65:
+        return "standard"
+    if score >= 40:
+        return "medium"
+    return "low"
+
+
+@app.post("/api/vocabulary/generate", response_model=VocabGenerateResponse)
+async def generate_vocabulary_item(payload: VocabGenerateRequest):
+    client = get_genai_client()
+    level = payload.cefr_level.strip().upper() or "B1"
+    focus_list = [
+        f.strip()
+        for f in (payload.focus_areas or [])
+        if f and f.strip() and f.strip().upper() != "ALL"
+    ]
+    focus_instruction = (
+        f" that specifically practices: {', '.join(focus_list)}"
+        if focus_list
+        else ""
+    )
+    recent = [r.strip() for r in (payload.recent_items or []) if r and r.strip()][:12]
+    avoid_instruction = (
+        f"\nDo NOT repeat any of these recent Spanish items: {', '.join(recent)}."
+        if recent
+        else ""
+    )
+
+    system_instruction = (
+        "You are an expert bilingual English-Spanish language coach. "
+        "Generate ONE useful Spanish word, everyday expression, or short phrase for an English learner to translate into English. "
+        "Match the difficulty to the requested CEFR level and focus areas. "
+        "The 'hint' must be in simple, neutral English and give context WITHOUT giving away the English translation."
+    )
+    user_prompt = (
+        f"Generate a Spanish word, expression, or short phrase for CEFR Level {level}{focus_instruction}.{avoid_instruction}\n"
+        f"- 'spanish_text': Natural Spanish word, expression, or short sentence.\n"
+        f"- 'item_type': 'word', 'expression', or 'phrase'.\n"
+        f"- 'hint': Short context hint in simple English.\n"
+        f"- 'cefr_level': '{level}'."
+    )
+
+    try:
+        response = await generate_with_retry(
+            client=client,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                response_mime_type="application/json",
+                response_schema=VocabGenerateResponse,
+                temperature=0.85,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
+        if not response.text:
+            raise ValueError("Empty response from Gemini model.")
+        data = json.loads(response.text)
+        data["cefr_level"] = level
+        return VocabGenerateResponse(**data)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate vocabulary item: {str(exc)}",
+        ) from exc
+
+
+@app.post("/api/vocabulary/evaluate", response_model=VocabEvaluateResponse)
+async def evaluate_vocabulary_item(
+    payload: VocabEvaluateRequest,
+    authorization: Optional[str] = Header(default=None),
+):
+    client = get_genai_client()
+    level = payload.cefr_level.strip().upper() or "B1"
+    user_translation = payload.user_translation.strip()
+
+    if not payload.skipped and not user_translation:
+        raise HTTPException(
+            status_code=400,
+            detail="Please enter an English translation or click 'I don't know'.",
+        )
+
+    if payload.skipped:
+        system_instruction = (
+            "You are a supportive English coach. The learner skipped translating a Spanish item into English. "
+            "Provide the most natural English translation and a short, clear explanation in simple English. Set score to 0."
+        )
+        user_prompt = (
+            f"Spanish text (CEFR {level}): {payload.spanish_text}\n"
+            "Return score = 0, expected_translation (natural English), and brief feedback explaining its meaning and usage."
+        )
+    else:
+        system_instruction = (
+            "You are an accurate, fair English-Spanish translation evaluator for English learners. "
+            "Grade how accurately and naturally the learner translated the Spanish text into English on a 0-100 scale. "
+            "Accept valid synonymous translations when natural and accurate. Keep feedback concise, neutral, and easy to understand."
+        )
+        user_prompt = (
+            f"CEFR Level: {level}\n"
+            f"Spanish text: {payload.spanish_text}\n"
+            f"Learner's English translation: {user_translation}\n"
+            "Return score (0-100), expected_translation (most natural English version), and concise feedback."
+        )
+
+    try:
+        response = await generate_with_retry(
+            client=client,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                response_mime_type="application/json",
+                response_schema=VocabEvaluateAISchema,
+                temperature=0.2,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
+            ),
+        )
+        if not response.text:
+            raise ValueError("Empty response from Gemini model.")
+        data = json.loads(response.text)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to evaluate vocabulary translation: {str(exc)}",
+        ) from exc
+
+    score = 0 if payload.skipped else max(0, min(100, int(data.get("score", 0))))
+    accuracy = compute_accuracy_tier(score)
+    expected_translation = data.get("expected_translation", "")
+    feedback = data.get("feedback", "")
+
+    saved_entry = None
+    token = extract_bearer_token(authorization)
+    if token:
+        try:
+            user = await supabase_auth_request("GET", "/user", access_token=token)
+            user_id = user.get("id")
+            if user_id:
+                word_count = len(user_translation.split()) if user_translation else 0
+                record = {
+                    "user_id": user_id,
+                    "title": f"Vocab: {payload.spanish_text[:60]}",
+                    "topic": "Vocabulary Practice",
+                    "prompt_question": payload.spanish_text,
+                    "original_text": user_translation or "(Skipped — I don't know)",
+                    "enhanced_text": expected_translation,
+                    "word_count": word_count,
+                    "score": score,
+                    "cefr_level": level,
+                    "rubric": {
+                        "entry_type": "vocabulary",
+                        "accuracy": accuracy,
+                        "feedback": feedback,
+                        "skipped": payload.skipped,
+                    },
+                    "corrections": [],
+                    "status": "reviewed",
+                }
+                created = await supabase_rest_request(
+                    "POST",
+                    "writing_entries",
+                    access_token=token,
+                    body=record,
+                    prefer="return=representation",
+                )
+                if isinstance(created, list) and created:
+                    saved_entry = created[0]
+        except Exception as db_exc:
+            print(f"Warning: failed to persist vocabulary entry to Supabase: {db_exc}")
+
+    return VocabEvaluateResponse(
+        score=score,
+        accuracy=accuracy,
+        expected_translation=expected_translation,
+        feedback=feedback,
+        saved_entry=saved_entry,
+    )
