@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { API_BASE_URL } from "../data/initialData";
 import InteractiveDotsBackground from "./common/InteractiveDotsBackground";
 import ThemeToggleButton from "./common/ThemeToggleButton";
@@ -17,6 +17,18 @@ export default function LoginView({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // Pre-warm the backend on Render while the user types credentials
+    fetch(`${API_BASE_URL}/api/health`, {
+      method: "GET",
+      signal: controller.signal,
+    }).catch(() => {
+      // Ignore silent wake-up errors
+    });
+    return () => controller.abort();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
