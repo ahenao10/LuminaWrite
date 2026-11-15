@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { CEFR_LEVELS, SUGGESTED_TOPICS } from "../data/initialData";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  CEFR_FOCUS_AREAS,
+  CEFR_LEVELS,
+  SUGGESTED_TOPICS,
+} from "../data/initialData";
 
 const DISCOURSE_MARKERS = [
   "Furthermore, ",
@@ -13,10 +17,13 @@ const DISCOURSE_MARKERS = [
 export default function DailyPracticeView({
   selectedCefr,
   onSelectCefr,
+  selectedFocusAreas = [],
+  onSelectFocusAreas,
   selectedTopic,
   onSelectTopic,
   promptData,
   isGeneratingPrompt,
+  hasPendingPromptChanges = false,
   onGeneratePrompt,
   essayTitle,
   onChangeTitle,
@@ -29,6 +36,76 @@ export default function DailyPracticeView({
 }) {
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [draftSavedToast, setDraftSavedToast] = useState(false);
+  const [focusWarningToast, setFocusWarningToast] = useState(false);
+  const [isFocusMenuOpen, setIsFocusMenuOpen] = useState(false);
+  const focusMenuRef = useRef(null);
+  const focusToastTimerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        focusMenuRef.current &&
+        !focusMenuRef.current.contains(event.target)
+      ) {
+        setIsFocusMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (focusToastTimerRef.current) {
+        clearTimeout(focusToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const levelFocusOptions = CEFR_FOCUS_AREAS[selectedCefr] || [];
+  const isAllFocusSelected =
+    levelFocusOptions.length > 0 &&
+    levelFocusOptions.every((item) => selectedFocusAreas.includes(item));
+  const hasNoFocusSelected = selectedFocusAreas.length === 0;
+
+  const focusButtonLabel = isAllFocusSelected
+    ? "ALL"
+    : hasNoFocusSelected
+    ? "None"
+    : selectedFocusAreas.length === 1
+    ? selectedFocusAreas[0]
+    : `${selectedFocusAreas.length} selected`;
+
+  const handleToggleAllFocus = () => {
+    if (isAllFocusSelected) {
+      onSelectFocusAreas?.([]);
+    } else {
+      onSelectFocusAreas?.(levelFocusOptions);
+    }
+  };
+
+  const handleToggleSingleFocus = (item) => {
+    const exists = selectedFocusAreas.includes(item);
+    const next = exists
+      ? selectedFocusAreas.filter((f) => f !== item)
+      : [...selectedFocusAreas, item];
+    onSelectFocusAreas?.(next);
+  };
+
+  const handlePromptButtonClick = () => {
+    if (hasNoFocusSelected) {
+      setFocusWarningToast(true);
+      if (focusToastTimerRef.current) {
+        clearTimeout(focusToastTimerRef.current);
+      }
+      focusToastTimerRef.current = setTimeout(() => {
+        setFocusWarningToast(false);
+      }, 3500);
+      return;
+    }
+    setFocusWarningToast(false);
+    onGeneratePrompt();
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -68,11 +145,36 @@ export default function DailyPracticeView({
 
   return (
     <div className="flex flex-col w-full pb-16">
+      {focusWarningToast && (
+        <div
+          role="alert"
+          className="fixed top-20 right-4 sm:right-6 z-50 bg-surface-container-lowest border border-amber-500/40 text-on-surface rounded-xl shadow-xl px-4 py-3 pr-9 flex items-center gap-2.5"
+        >
+          <span className="material-symbols-outlined text-[18px] text-amber-600 dark:text-amber-400 shrink-0">
+            warning
+          </span>
+          <span className="font-body-sm text-body-sm whitespace-nowrap">
+            Please select at least one focus area to apply changes.
+          </span>
+          <button
+            type="button"
+            onClick={() => setFocusWarningToast(false)}
+            aria-label="Close notification"
+            className="absolute top-1.5 right-1.5 p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[15px] block">
+              close
+            </span>
+          </button>
+        </div>
+      )}
       {/* Top Daily Prompt Header & Context Card */}
       <section className="w-full mb-8 mt-4">
-        <div className="relative overflow-hidden rounded-xl bg-surface-container-lowest p-6 shadow-sm">
+        <div className="relative rounded-xl bg-surface-container-lowest p-6 shadow-sm">
           {/* Ambient gentle tint glow */}
-          <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent blur-3xl pointer-events-none"></div>
+          <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+            <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-gradient-to-br from-primary/10 via-secondary/5 to-transparent blur-3xl"></div>
+          </div>
 
           {/* Controls Row: Badges + CEFR Level Selector + Topic + Generate Prompt Button */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
@@ -107,6 +209,69 @@ export default function DailyPracticeView({
                     {lvl.code}
                   </button>
                 ))}
+              </div>
+
+              {/* CEFR Focus Areas Multi-Check Dropdown */}
+              <div className="relative" ref={focusMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsFocusMenuOpen((prev) => !prev)}
+                  aria-expanded={isFocusMenuOpen}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[15px] text-primary">
+                    checklist
+                  </span>
+                  <span className="text-on-surface-variant">Focus:</span>
+                  <span className="font-semibold max-w-[140px] truncate">
+                    {focusButtonLabel}
+                  </span>
+                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
+                    {isFocusMenuOpen ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+
+                {isFocusMenuOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-64 rounded-xl bg-surface-container-lowest border border-outline-variant/40 shadow-xl p-2 z-30 flex flex-col gap-1">
+                    <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      {selectedCefr} Practice Focus
+                    </div>
+
+                    <label className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-surface-container cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isAllFocusSelected}
+                        onChange={handleToggleAllFocus}
+                        className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                      />
+                      <span className="font-label-md text-label-md font-semibold text-on-surface">
+                        ALL ({selectedCefr} skills)
+                      </span>
+                    </label>
+
+                    <div className="my-1 border-t border-outline-variant/30" />
+
+                    {levelFocusOptions.map((item) => {
+                      const checked = selectedFocusAreas.includes(item);
+                      return (
+                        <label
+                          key={item}
+                          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-surface-container cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handleToggleSingleFocus(item)}
+                            className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+                          />
+                          <span className="font-body-sm text-body-sm text-on-surface">
+                            {item}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Optional Topic Filter */}
@@ -146,18 +311,34 @@ export default function DailyPracticeView({
             <div className="flex items-center gap-2 self-start lg:self-auto">
               <button
                 type="button"
-                onClick={onGeneratePrompt}
+                onClick={handlePromptButtonClick}
                 disabled={isGeneratingPrompt}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container disabled:opacity-60 font-label-md text-label-md transition-all shadow-sm cursor-pointer"
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg disabled:opacity-60 font-label-md text-label-md transition-all shadow-sm cursor-pointer ${
+                  hasPendingPromptChanges
+                    ? `bg-tertiary text-on-tertiary hover:bg-tertiary-container ${
+                        hasNoFocusSelected ? "opacity-55" : ""
+                      }`
+                    : `bg-primary text-on-primary hover:bg-primary-container ${
+                        hasNoFocusSelected ? "opacity-55" : ""
+                      }`
+                }`}
               >
                 <span
                   className={`material-symbols-outlined text-[16px] ${
                     isGeneratingPrompt ? "animate-spin" : ""
                   }`}
                 >
-                  refresh
+                  {isGeneratingPrompt
+                    ? "refresh"
+                    : hasPendingPromptChanges
+                    ? "check"
+                    : "refresh"}
                 </span>
-                {isGeneratingPrompt ? "Generating Prompt..." : "Generate New Prompt"}
+                {isGeneratingPrompt
+                  ? "Generating Prompt..."
+                  : hasPendingPromptChanges
+                  ? "Apply changes"
+                  : "Generate New Prompt"}
               </button>
             </div>
           </div>

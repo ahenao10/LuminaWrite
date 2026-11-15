@@ -6,6 +6,7 @@ import LoginView from "./components/LoginView";
 import SessionReviewView from "./components/SessionReviewView";
 import {
   API_BASE_URL,
+  CEFR_FOCUS_AREAS,
   CEFR_LEVELS,
   DEFAULT_PROMPT,
 } from "./data/initialData";
@@ -86,9 +87,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("daily-practice");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCefr, setSelectedCefr] = useState("B1");
+  const [selectedFocusAreas, setSelectedFocusAreas] = useState(
+    () => CEFR_FOCUS_AREAS.B1 || []
+  );
   const [selectedTopic, setSelectedTopic] = useState("Daily Lifestyle");
   const [promptData, setPromptData] = useState(DEFAULT_PROMPT);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [hasPendingPromptChanges, setHasPendingPromptChanges] = useState(false);
 
   const [essayTitle, setEssayTitle] = useState(
     DEFAULT_PROMPT.suggested_title || ""
@@ -125,11 +130,13 @@ export default function App() {
     setCurrentUser(user);
     setUserProfile(profile);
     const initialLevel = profile?.target_cefr || selectedCefr;
+    const initialFocus = CEFR_FOCUS_AREAS[initialLevel] || [];
     if (profile?.target_cefr) {
       setSelectedCefr(profile.target_cefr);
     }
+    setSelectedFocusAreas(initialFocus);
     await fetchEntriesFromDb(token);
-    handleGeneratePrompt(initialLevel, selectedTopic);
+    handleGeneratePrompt(initialLevel, selectedTopic, initialFocus);
   };
 
   const handleSignOut = async () => {
@@ -152,6 +159,8 @@ export default function App() {
     setEssayTitle(DEFAULT_PROMPT.suggested_title || "");
     setUserText("");
     setSelectedCefr("B1");
+    setSelectedFocusAreas(CEFR_FOCUS_AREAS.B1 || []);
+    setHasPendingPromptChanges(false);
     setActiveTab("daily-practice");
   };
 
@@ -165,11 +174,23 @@ export default function App() {
     );
   }
 
-  const handleGeneratePrompt = async (overrideLevel, overrideTopic) => {
+  const handleGeneratePrompt = async (
+    overrideLevel,
+    overrideTopic,
+    overrideFocusAreas
+  ) => {
     const levelToUse =
       typeof overrideLevel === "string" ? overrideLevel : selectedCefr;
     const topicToUse =
       typeof overrideTopic === "string" ? overrideTopic : selectedTopic;
+    const focusToUse = Array.isArray(overrideFocusAreas)
+      ? overrideFocusAreas
+      : selectedFocusAreas;
+    const levelFocusOptions = CEFR_FOCUS_AREAS[levelToUse] || [];
+    const isAllFocus =
+      levelFocusOptions.length > 0 &&
+      focusToUse.length >= levelFocusOptions.length;
+
     setIsGeneratingPrompt(true);
     setErrorMessage("");
     setUserText("");
@@ -178,6 +199,8 @@ export default function App() {
       const body = {
         cefr_level: levelToUse,
         topic: topicToUse === "All Topics" ? null : topicToUse,
+        focus_areas:
+          isAllFocus || focusToUse.length === 0 ? null : focusToUse,
       };
 
       const res = await fetch(`${API_BASE_URL}/api/generate-prompt`, {
@@ -206,6 +229,7 @@ export default function App() {
       });
       setEssayTitle(recommendedTitle);
       setLatestEvaluation(null);
+      setHasPendingPromptChanges(false);
     } catch (err) {
       setErrorMessage(
         err.message ||
@@ -218,13 +242,20 @@ export default function App() {
 
   const handleSelectCefr = (newLevel) => {
     if (newLevel === selectedCefr) return;
+    const defaultFocus = CEFR_FOCUS_AREAS[newLevel] || [];
     setSelectedCefr(newLevel);
-    handleGeneratePrompt(newLevel, selectedTopic);
+    setSelectedFocusAreas(defaultFocus);
+    setHasPendingPromptChanges(true);
+  };
+
+  const handleSelectFocusAreas = (nextFocusAreas) => {
+    setSelectedFocusAreas(nextFocusAreas);
+    setHasPendingPromptChanges(true);
   };
 
   const handleSelectTopic = (newTopic) => {
     setSelectedTopic(newTopic);
-    handleGeneratePrompt(selectedCefr, newTopic);
+    handleGeneratePrompt(selectedCefr, newTopic, selectedFocusAreas);
   };
 
   const handleEvaluate = async () => {
@@ -722,10 +753,13 @@ export default function App() {
             <DailyPracticeView
               selectedCefr={selectedCefr}
               onSelectCefr={handleSelectCefr}
+              selectedFocusAreas={selectedFocusAreas}
+              onSelectFocusAreas={handleSelectFocusAreas}
               selectedTopic={selectedTopic}
               onSelectTopic={handleSelectTopic}
               promptData={promptData}
               isGeneratingPrompt={isGeneratingPrompt}
+              hasPendingPromptChanges={hasPendingPromptChanges}
               onGeneratePrompt={handleGeneratePrompt}
               essayTitle={essayTitle}
               onChangeTitle={setEssayTitle}

@@ -20,6 +20,51 @@ export const CEFR_LEVELS = [
   { code: "C2", name: "Mastery", label: "Level C2 Mastery" },
 ];
 
+export const CEFR_FOCUS_AREAS = {
+  A1: [
+    'Verb "to be"',
+    "Simple Present",
+    "Articles (a / an / the)",
+    "Basic Prepositions (in / on / at)",
+    "Pronouns & Plurals",
+  ],
+  A2: [
+    "Past Simple",
+    "Future (going to / will)",
+    "Comparatives & Superlatives",
+    "Countable & Uncountable Nouns",
+    "Adverbs of Frequency",
+  ],
+  B1: [
+    "Modal Verbs",
+    "Phrasal Verbs",
+    "Present Perfect",
+    "First & Second Conditionals",
+    "Connectors & Linking Words",
+  ],
+  B2: [
+    "Passive Voice",
+    "Reported Speech",
+    "Third & Mixed Conditionals",
+    "Relative Clauses",
+    "Advanced Phrasal Verbs",
+  ],
+  C1: [
+    "Inversion & Emphasis",
+    "Participle Clauses",
+    "Cleft Sentences",
+    "Subjunctive & Unreal Past",
+    "Hedging & Nuance",
+  ],
+  C2: [
+    "Idiomatic & Figurative Lexis",
+    "Ellipsis & Substitution",
+    "Complex Discourse Markers",
+    "Stylistic Register Shifts",
+    "Subtle Modality",
+  ],
+};
+
 export const SUGGESTED_TOPICS = [
   "Daily Lifestyle",
   "All Topics",

@@ -158,6 +158,10 @@ class GeneratePromptRequest(BaseModel):
         default=None,
         description="Optional topic or theme for the writing prompt",
     )
+    focus_areas: Optional[List[str]] = Field(
+        default=None,
+        description="Optional specific grammar or language skills to practice",
+    )
 
 
 class GeneratePromptResponse(BaseModel):
@@ -521,8 +525,15 @@ async def generate_prompt(payload: GeneratePromptRequest):
         "Set min_words to 15 as the minimum required words to submit, while encouraging a full response."
     )
 
+    focus_list = [f.strip() for f in (payload.focus_areas or []) if f and f.strip() and f.strip().upper() != "ALL"]
+    focus_instruction = (
+        f"\n- Target practice focus: Design the prompt and tips so the learner naturally practices: {', '.join(focus_list)}."
+        if focus_list
+        else ""
+    )
+
     user_prompt = (
-        f"Create a daily English writing prompt for CEFR Level {level}, {topic_instruction}.\n"
+        f"Create a daily English writing prompt for CEFR Level {level}, {topic_instruction}.{focus_instruction}\n"
         f"- 'topic': A concise, editorial-style topic category in English.\n"
         f"- 'suggested_title': A short, natural, engaging essay title in English (3 to 7 words) that fits this prompt and level {level}.\n"
         f"- 'question': A clear, thought-provoking writing prompt question suitable for level {level}.\n"
