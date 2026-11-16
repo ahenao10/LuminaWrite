@@ -54,24 +54,35 @@ app.add_middleware(
 )
 
 
+_genai_client: Optional[genai.Client] = None
+_cached_system_prompt: Optional[str] = None
+
+
 def get_genai_client() -> genai.Client:
+    global _genai_client
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=500,
             detail="GEMINI_API_KEY is not configured in backend/.env",
         )
-    return genai.Client(api_key=api_key)
+    if _genai_client is None:
+        _genai_client = genai.Client(api_key=api_key)
+    return _genai_client
 
 
 def load_system_prompt() -> str:
+    global _cached_system_prompt
+    if _cached_system_prompt is not None:
+        return _cached_system_prompt
     prompt_path = BASE_DIR / "prompt.md"
     if not prompt_path.exists():
         raise HTTPException(
             status_code=500,
             detail="System instruction file backend/prompt.md not found.",
         )
-    return prompt_path.read_text(encoding="utf-8")
+    _cached_system_prompt = prompt_path.read_text(encoding="utf-8")
+    return _cached_system_prompt
 
 
 async def generate_with_retry(
@@ -79,7 +90,7 @@ async def generate_with_retry(
     contents: str,
     config: types.GenerateContentConfig,
 ):
-    """Call Gemini with fast fallback on transient 503/429/404 or thinking_config errors."""
+    """Call Gemini asynchronously with fast fallback on transient 503/429/404 or thinking_config errors."""
     models_to_try: List[str] = []
     for candidate in (
         MODEL_NAME,
@@ -94,8 +105,7 @@ async def generate_with_retry(
     last_exc: Optional[Exception] = None
     for model_name in models_to_try:
         try:
-            return await asyncio.to_thread(
-                client.models.generate_content,
+            return await client.aio.models.generate_content(
                 model=model_name,
                 contents=contents,
                 config=config,
@@ -111,8 +121,7 @@ async def generate_with_retry(
             ):
                 try:
                     no_thinking_config = config.model_copy(update={"thinking_config": None})
-                    return await asyncio.to_thread(
-                        client.models.generate_content,
+                    return await client.aio.models.generate_content(
                         model=model_name,
                         contents=contents,
                         config=no_thinking_config,
@@ -133,7 +142,7 @@ async def generate_with_retry(
             )
             if not is_retryable:
                 raise
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.1)
 
     if last_exc:
         raise last_exc
@@ -194,6 +203,21 @@ class GeneratePromptRequest(BaseModel):
     )
 
 
+class QuizOption(BaseModel):
+    value: Literal["a", "b", "c"]
+    label: str = Field(description="Option text starting with 'A) ', 'B) ', or 'C) '")
+
+
+class QuizQuestionItem(BaseModel):
+    id: int = Field(ge=1, le=5)
+    topic: str = Field(description="Short grammar or vocabulary skill label in English")
+    question: str = Field(description="Clear multiple-choice question in simple English")
+    options: List[QuizOption] = Field(description="Exactly 3 options (a, b, c)")
+    correct: Literal["a", "b", "c"]
+    successMsg: str = Field(description="1 short sentence explaining why the answer is right")
+    errorMsg: str = Field(description="1 short sentence explaining why the other choices are wrong")
+
+
 class GeneratePromptResponse(BaseModel):
     topic: str = Field(description="Short title or category of the writing topic in English")
     suggested_title: str = Field(
@@ -204,6 +228,9 @@ class GeneratePromptResponse(BaseModel):
     tips: List[str] = Field(
         description="3 practical writing tips (vocabulary, grammar, or discourse markers) in clear, simple English"
     )
+    quiz_questions: List[QuizQuestionItem] = Field(
+        description="Exactly 5 multiple-choice practice questions tailored to the CEFR level, focus areas, and topic"
+    )
 
 
 class EvaluateRequest(BaseModel):
@@ -211,6 +238,8 @@ class EvaluateRequest(BaseModel):
     user_text: str = Field(description="The original text submitted by the user")
     title: Optional[str] = Field(default=None, description="Optional essay title for saving")
     topic: Optional[str] = Field(default="General", description="Optional topic name for saving")
+    cefr_level: Optional[str] = Field(default="B1", description="Target CEFR level")
+    focus_areas: Optional[List[str]] = Field(default=None, description="Optional focus areas")
 
 
 class RubricScores(BaseModel):
@@ -246,6 +275,9 @@ class EvaluateAISchema(BaseModel):
     )
     corrections: List[CorrectionItem] = Field(
         description="List of specific character-exact corrections between user_text and enhanced_text"
+    )
+    quiz_questions: List[QuizQuestionItem] = Field(
+        description="Exactly 5 concise multiple-choice quiz questions based on the student's text, corrections, topic, and CEFR level"
     )
 
 
@@ -589,7 +621,9 @@ async def generate_prompt(payload: GeneratePromptRequest):
         f"- 'suggested_title': A short, natural, engaging essay title in English (3 to 7 words) that fits this prompt and level {level}.\n"
         f"- 'question': A clear, thought-provoking writing prompt question suitable for level {level}.\n"
         f"- 'min_words': Set to 15.\n"
-        f"- 'tips': Exactly 3 actionable writing tips in simple English (e.g., useful connectors, target grammar structures, or key vocabulary for this prompt)."
+        f"- 'tips': Exactly 3 actionable writing tips in simple English (e.g., useful connectors, target grammar structures, or key vocabulary for this prompt).\n"
+        f"- 'quiz_questions': Exactly 5 multiple-choice questions (id 1..5) tailored to CEFR Level {level}, the topic, and the practice focus areas. "
+        f"Each question has 'topic', 'question', 3 options ('a', 'b', 'c' labeled 'A) ...', 'B) ...', 'C) ...'), 'correct', 'successMsg' (1 short sentence), and 'errorMsg' (1 short sentence). Keep all quiz text concise."
     )
 
     try:
@@ -601,6 +635,7 @@ async def generate_prompt(payload: GeneratePromptRequest):
                 response_mime_type="application/json",
                 response_schema=GeneratePromptResponse,
                 temperature=0.95,
+                max_output_tokens=1600,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
@@ -627,13 +662,19 @@ async def evaluate_writing(
     client = get_genai_client()
     system_instruction = load_system_prompt()
 
+    target_level = (payload.cefr_level or "B1").strip().upper()
+    focus_list = [f.strip() for f in (payload.focus_areas or []) if f and f.strip() and f.strip().upper() != "ALL"]
+    focus_note = f" | Focus Areas: {', '.join(focus_list)}" if focus_list else ""
+
     evaluation_input = (
+        f"### Target CEFR Level: {target_level} | Topic: {payload.topic or 'General'}{focus_note}\n"
         f"### Writing Prompt Question:\n{payload.prompt_question}\n\n"
         f"### Student's Original Text (`user_text`):\n{user_text}\n\n"
         "### Reminder of Critical Rules:\n"
         "1. Every `original_snippet` MUST be an exact, character-by-character substring of `user_text` above.\n"
         "2. Every `corrected_snippet` MUST be an exact, character-by-character substring of your `enhanced_text`.\n"
-        "3. Every `explanation` MUST be in simple, clear, and concise English."
+        "3. Every `explanation` MUST be 1 concise sentence in simple, clear English.\n"
+        "4. Include `quiz_questions`: exactly 5 concise multiple-choice questions (id 1..5) tailored to the student's writing, corrections, CEFR level, and topic (options 'a','b','c' starting with 'A) ','B) ','C) ', plus 'correct', 'successMsg', 'errorMsg')."
     )
 
     try:
@@ -645,6 +686,7 @@ async def evaluate_writing(
                 response_mime_type="application/json",
                 response_schema=EvaluateAISchema,
                 temperature=0.2,
+                max_output_tokens=2000,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
@@ -665,6 +707,9 @@ async def evaluate_writing(
             user_id = user.get("id")
             if user_id:
                 word_count = len(user_text.split())
+                rubric_payload = dict(data.get("rubric") or {})
+                if isinstance(data.get("quiz_questions"), list):
+                    rubric_payload["quiz_questions"] = data["quiz_questions"]
                 record = {
                     "user_id": user_id,
                     "title": payload.title or payload.topic or "Writing Practice",
@@ -675,7 +720,7 @@ async def evaluate_writing(
                     "word_count": word_count,
                     "score": data.get("score"),
                     "cefr_level": data.get("cefr_level"),
-                    "rubric": data.get("rubric"),
+                    "rubric": rubric_payload,
                     "corrections": data.get("corrections"),
                     "status": "reviewed",
                 }
@@ -811,6 +856,7 @@ async def generate_vocabulary_item(payload: VocabGenerateRequest):
                 response_mime_type="application/json",
                 response_schema=VocabGenerateResponse,
                 temperature=1.0,
+                max_output_tokens=250,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
@@ -876,6 +922,7 @@ async def evaluate_vocabulary_item(
                 response_mime_type="application/json",
                 response_schema=VocabEvaluateAISchema,
                 temperature=0.2,
+                max_output_tokens=350,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )

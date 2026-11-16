@@ -1,131 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import defaultQuizPool from "../../data/defaultQuizQuestions.json";
 import ActionButton from "../common/ActionButton";
 
-export const PRACTICE_QUESTIONS = [
-  {
-    id: 1,
-    topic: "Purpose: 'to' + verb",
-    question: "Which sentence correctly explains the purpose of an action?",
-    options: [
-      {
-        value: "a",
-        label: "A) Companies hold weekly meetings to help remote teams stay connected.",
-      },
-      {
-        value: "b",
-        label: "B) Companies hold weekly meetings for help remote teams stay connected.",
-      },
-      {
-        value: "c",
-        label: "C) Companies hold weekly meetings to helping remote teams stay connected.",
-      },
-    ],
-    correct: "a",
-    successMsg:
-      "Correct! In English, use 'to + base verb' (to help) to explain why you do something.",
-    errorMsg:
-      "Not quite. Use 'to + base verb' ('to help') to show purpose, not 'for + verb' or 'to + -ing'.",
-  },
-  {
-    id: 2,
-    topic: "Subject-Verb Agreement",
-    question:
-      "Choose the sentence where the verb matches the subject correctly:",
-    options: [
-      {
-        value: "a",
-        label: "A) Many students uses online tools to practice their English.",
-      },
-      {
-        value: "b",
-        label: "B) Many students use online tools to practice their English.",
-      },
-      {
-        value: "c",
-        label: "C) Many student use online tools to practice their English.",
-      },
-    ],
-    correct: "b",
-    successMsg:
-      "Great job! 'Many students' is plural, so it takes the base verb 'use' without '-s'.",
-    errorMsg:
-      "Check the plural subject 'Many students'. Plural subjects take 'use', not 'uses'.",
-  },
-  {
-    id: 3,
-    topic: "Adverbs vs. Adjectives",
-    question: "Which sentence uses the adverb correctly to describe a verb?",
-    options: [
-      {
-        value: "a",
-        label: "A) Technology is changing our daily lives very quick.",
-      },
-      {
-        value: "b",
-        label: "B) Technology is changing our daily lives quickly.",
-      },
-      {
-        value: "c",
-        label: "C) Technology is quick changing our daily lives.",
-      },
-    ],
-    correct: "b",
-    successMsg:
-      "Well done! Adverbs ending in '-ly' (like 'quickly') describe how an action happens.",
-    errorMsg:
-      "Remember to use the adverb 'quickly' (not the adjective 'quick') to describe the verb 'changing'.",
-  },
-  {
-    id: 4,
-    topic: "Linking Words (Contrast)",
-    question: "Which sentence uses a contrast connector correctly?",
-    options: [
-      {
-        value: "a",
-        label: "A) Working from home saves time. However, it can feel lonely.",
-      },
-      {
-        value: "b",
-        label: "B) Working from home saves time. Because, it can feel lonely.",
-      },
-      {
-        value: "c",
-        label: "C) Working from home saves time. Furthermore, it can feel lonely.",
-      },
-    ],
-    correct: "a",
-    successMsg:
-      "Correct! 'However' clearly introduces a contrasting or opposite idea.",
-    errorMsg:
-      "'However' is used to show contrast between a positive point and a negative point.",
-  },
-  {
-    id: 5,
-    topic: "Word Choice: 'affect' vs 'effect'",
-    question: "Choose the sentence that uses 'affect' or 'effect' correctly:",
-    options: [
-      {
-        value: "a",
-        label: "A) Poor sleep can effect your focus at work.",
-      },
-      {
-        value: "b",
-        label: "B) Poor sleep can affect your focus at work.",
-      },
-      {
-        value: "c",
-        label: "C) Poor sleep has a strong affect on your focus at work.",
-      },
-    ],
-    correct: "b",
-    successMsg:
-      "Nice! 'Affect' is usually the action verb ('can affect'), while 'effect' is usually a noun ('has an effect').",
-    errorMsg:
-      "Use 'affect' as the verb ('can affect') and 'effect' as the noun ('a strong effect').",
-  },
-];
+export function getRandomDefaultQuizQuestions(count = 5) {
+  const copy = [...defaultQuizPool];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, count);
+}
 
 export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
+  const questions = useMemo(() => {
+    if (
+      Array.isArray(activeEntry?.quizQuestions) &&
+      activeEntry.quizQuestions.length > 0
+    ) {
+      return activeEntry.quizQuestions;
+    }
+    return getRandomDefaultQuizQuestions(5);
+  }, [activeEntry?.id, activeEntry?.quizQuestions]);
+
   const [currentQIdx, setCurrentQIdx] = useState(0);
   const [answers, setAnswers] = useState(
     () => activeEntry?.quizResult?.answers || {}
@@ -140,13 +36,13 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
     setCheckedQuestions(activeEntry?.quizResult?.checked || {});
   }, [activeEntry?.id]);
 
-  const currentQuestion = PRACTICE_QUESTIONS[currentQIdx];
+  const currentQuestion = questions[currentQIdx] || questions[0];
   const selectedOption = answers[currentQuestion.id] || "";
   const isChecked = Boolean(checkedQuestions[currentQuestion.id]);
   const isCorrect = selectedOption === currentQuestion.correct;
 
   const totalChecked = Object.keys(checkedQuestions).length;
-  const totalCorrect = PRACTICE_QUESTIONS.filter(
+  const totalCorrect = questions.filter(
     (q) => checkedQuestions[q.id] && answers[q.id] === q.correct
   ).length;
 
@@ -156,13 +52,13 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
     setCheckedQuestions(nextChecked);
 
     const nextAnswered = Object.keys(nextChecked).length;
-    const nextCorrect = PRACTICE_QUESTIONS.filter(
+    const nextCorrect = questions.filter(
       (q) => nextChecked[q.id] && answers[q.id] === q.correct
     ).length;
 
     onSaveQuizResult?.(activeEntry.id, {
       correct: nextCorrect,
-      total: PRACTICE_QUESTIONS.length,
+      total: questions.length,
       answered: nextAnswered,
       answers,
       checked: nextChecked,
@@ -187,13 +83,13 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
             </div>
           </div>
           <span className="font-label-sm text-label-sm px-2.5 py-1 rounded bg-surface-container font-semibold text-on-surface-variant shrink-0">
-            Question {currentQIdx + 1} of {PRACTICE_QUESTIONS.length}
+            Question {currentQIdx + 1} of {questions.length}
           </span>
         </div>
 
         {/* Progress Dots for 5 Questions */}
         <div className="flex items-center gap-2 mt-4">
-          {PRACTICE_QUESTIONS.map((q, idx) => {
+          {questions.map((q, idx) => {
             const answered = Boolean(checkedQuestions[q.id]);
             const qCorrect = answered && answers[q.id] === q.correct;
             return (
@@ -279,7 +175,7 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
 
       <div className="mt-6 pt-4 border-t border-surface-container flex flex-wrap items-center justify-between gap-3">
         <span className="font-body-sm text-body-sm text-on-surface-variant">
-          Score: <strong>{totalCorrect}</strong> / {PRACTICE_QUESTIONS.length}{" "}
+          Score: <strong>{totalCorrect}</strong> / {questions.length}{" "}
           correct ({totalChecked} answered)
         </span>
         <div className="flex items-center gap-2">
@@ -305,10 +201,10 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
             <ActionButton
               variant="primary"
               size="md"
-              disabled={currentQIdx === PRACTICE_QUESTIONS.length - 1}
+              disabled={currentQIdx === questions.length - 1}
               onClick={() =>
                 setCurrentQIdx((i) =>
-                  Math.min(PRACTICE_QUESTIONS.length - 1, i + 1)
+                  Math.min(questions.length - 1, i + 1)
                 )
               }
             >

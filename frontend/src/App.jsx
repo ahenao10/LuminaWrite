@@ -13,6 +13,7 @@ import {
   CEFR_LEVELS,
 } from "./data/initialData";
 import defaultPromptsByCefr from "./data/defaultPrompts.json";
+import { getRandomDefaultQuizQuestions } from "./components/review/RetentionQuizCard";
 
 function getRandomDefaultPrompt(cefrLevel = "B1") {
   const pool = defaultPromptsByCefr[cefrLevel] || defaultPromptsByCefr.B1 || [];
@@ -24,6 +25,7 @@ function getRandomDefaultPrompt(cefrLevel = "B1") {
     question: chosen.question,
     min_words: Math.max(15, chosen.min_words || 15),
     tips: Array.isArray(chosen.tips) ? chosen.tips : [],
+    quiz_questions: getRandomDefaultQuizQuestions(5),
   };
 }
 
@@ -88,6 +90,9 @@ function mapDbEntryToUi(row) {
         }
       : null,
     quizResult: row.rubric?.quiz_result || null,
+    quizQuestions: Array.isArray(row.rubric?.quiz_questions)
+      ? row.rubric.quiz_questions
+      : null,
   };
 }
 
@@ -274,6 +279,9 @@ export default function App() {
         question: data.question,
         min_words: Math.max(15, data.min_words || 15),
         tips: Array.isArray(data.tips) ? data.tips : [],
+        quiz_questions: Array.isArray(data.quiz_questions)
+          ? data.quiz_questions
+          : [],
       });
       setEssayTitle(recommendedTitle);
       setLatestEvaluation(null);
@@ -472,6 +480,8 @@ export default function App() {
           user_text: trimmed,
           title: essayTitle.trim() || promptData.topic || "Writing Practice",
           topic: promptData.topic || "General",
+          cefr_level: selectedCefr,
+          focus_areas: selectedFocusAreas,
         }),
       });
 
@@ -500,6 +510,11 @@ export default function App() {
             status: "Reviewed",
             user_text: trimmed,
             evaluation: evalResult,
+            quizQuestions:
+              Array.isArray(evalResult.quiz_questions) &&
+              evalResult.quiz_questions.length > 0
+                ? evalResult.quiz_questions
+                : promptData?.quiz_questions || null,
           };
 
       setJournalEntries((prev) => [newEntry, ...prev]);

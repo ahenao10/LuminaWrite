@@ -377,7 +377,7 @@ export default function LoginView({
                   </button>
                 </form>
 
-                {/* Toggle Sign In / Sign Up */}
+                {/* Toggle Sign In / Sign Up (commented out while accounts are managed manually in Supabase)
                 <div className="text-center pt-1">
                   <p className="font-body-sm text-body-sm text-on-surface-variant">
                     {mode === "signup"
@@ -398,6 +398,7 @@ export default function LoginView({
                     </button>
                   </p>
                 </div>
+                */}
               </div>
             </div>
           </div>

@@ -1,0 +1,332 @@
+[
+  {
+    "id": 1,
+    "topic": "Purpose: 'to' + verb",
+    "question": "Which sentence correctly explains the purpose of an action?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Companies hold weekly meetings to help remote teams stay connected."
+      },
+      {
+        "value": "b",
+        "label": "B) Companies hold weekly meetings for help remote teams stay connected."
+      },
+      {
+        "value": "c",
+        "label": "C) Companies hold weekly meetings to helping remote teams stay connected."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Correct! In English, use 'to + base verb' (to help) to explain why you do something.",
+    "errorMsg": "Not quite. Use 'to + base verb' ('to help') to show purpose, not 'for + verb' or 'to + -ing'."
+  },
+  {
+    "id": 2,
+    "topic": "Subject-Verb Agreement",
+    "question": "Choose the sentence where the verb matches the subject correctly:",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Many students uses online tools to practice their English."
+      },
+      {
+        "value": "b",
+        "label": "B) Many students use online tools to practice their English."
+      },
+      {
+        "value": "c",
+        "label": "C) Many student use online tools to practice their English."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Great job! 'Many students' is plural, so it takes the base verb 'use' without '-s'.",
+    "errorMsg": "Check the plural subject 'Many students'. Plural subjects take 'use', not 'uses'."
+  },
+  {
+    "id": 3,
+    "topic": "Adverbs vs. Adjectives",
+    "question": "Which sentence uses the adverb correctly to describe a verb?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Technology is changing our daily lives very quick."
+      },
+      {
+        "value": "b",
+        "label": "B) Technology is changing our daily lives quickly."
+      },
+      {
+        "value": "c",
+        "label": "C) Technology is quick changing our daily lives."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Well done! Adverbs ending in '-ly' (like 'quickly') describe how an action happens.",
+    "errorMsg": "Remember to use the adverb 'quickly' (not the adjective 'quick') to describe the verb 'changing'."
+  },
+  {
+    "id": 4,
+    "topic": "Linking Words (Contrast)",
+    "question": "Which sentence uses a contrast connector correctly?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Working from home saves time. However, it can feel lonely."
+      },
+      {
+        "value": "b",
+        "label": "B) Working from home saves time. Because, it can feel lonely."
+      },
+      {
+        "value": "c",
+        "label": "C) Working from home saves time. Furthermore, it can feel lonely."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Correct! 'However' clearly introduces a contrasting or opposite idea.",
+    "errorMsg": "'However' is used to show contrast between a positive point and a negative point."
+  },
+  {
+    "id": 5,
+    "topic": "Word Choice: 'affect' vs 'effect'",
+    "question": "Choose the sentence that uses 'affect' or 'effect' correctly:",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Poor sleep can effect your focus at work."
+      },
+      {
+        "value": "b",
+        "label": "B) Poor sleep can affect your focus at work."
+      },
+      {
+        "value": "c",
+        "label": "C) Poor sleep has a strong affect on your focus at work."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Nice! 'Affect' is usually the action verb ('can affect'), while 'effect' is usually a noun ('has an effect').",
+    "errorMsg": "Use 'affect' as the verb ('can affect') and 'effect' as the noun ('a strong effect')."
+  },
+  {
+    "id": 6,
+    "topic": "Present Perfect vs. Past Simple",
+    "question": "Which sentence correctly describes a finished action at a specific past time?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) I have visited Madrid two years ago."
+      },
+      {
+        "value": "b",
+        "label": "B) I visited Madrid two years ago."
+      },
+      {
+        "value": "c",
+        "label": "C) I was visit Madrid two years ago."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Correct! With finished time markers like 'two years ago', always use the past simple ('visited').",
+    "errorMsg": "Do not use present perfect ('have visited') with a specific finished time like 'two years ago'."
+  },
+  {
+    "id": 7,
+    "topic": "Prepositions of Time",
+    "question": "Choose the sentence with the correct time prepositions:",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Our English class starts at 9:00 a.m. on Mondays."
+      },
+      {
+        "value": "b",
+        "label": "B) Our English class starts on 9:00 a.m. in Mondays."
+      },
+      {
+        "value": "c",
+        "label": "C) Our English class starts in 9:00 a.m. at Mondays."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Well done! Use 'at' for exact clock times and 'on' for days of the week.",
+    "errorMsg": "Remember: 'at' is used for clock times ('at 9:00 a.m.') and 'on' is used for days ('on Mondays')."
+  },
+  {
+    "id": 8,
+    "topic": "Modal Verbs",
+    "question": "Which sentence uses a modal verb with the correct verb form?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) You should to read a few pages in English every night."
+      },
+      {
+        "value": "b",
+        "label": "B) You should reading a few pages in English every night."
+      },
+      {
+        "value": "c",
+        "label": "C) You should read a few pages in English every night."
+      }
+    ],
+    "correct": "c",
+    "successMsg": "Correct! Modal verbs like 'should', 'can', and 'must' are always followed by the base verb without 'to'.",
+    "errorMsg": "After modal verbs like 'should', use the base verb directly ('should read'), never 'to + verb' or '-ing'."
+  },
+  {
+    "id": 9,
+    "topic": "Countable vs. Uncountable Nouns",
+    "question": "Which sentence handles the uncountable noun 'advice' or 'information' properly?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) She gave me some useful advice before my interview."
+      },
+      {
+        "value": "b",
+        "label": "B) She gave me many useful advices before my interview."
+      },
+      {
+        "value": "c",
+        "label": "C) She gave me an useful advice before my interview."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Spot on! 'Advice' is uncountable in English, so we use 'some advice' or 'a piece of advice', never 'advices'.",
+    "errorMsg": "'Advice' is uncountable in English, so it has no plural '-s' and cannot take 'a/an' or 'many'."
+  },
+  {
+    "id": 10,
+    "topic": "Gerunds After Prepositions",
+    "question": "Choose the grammatically correct sentence:",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) I am looking forward to meet your team tomorrow."
+      },
+      {
+        "value": "b",
+        "label": "B) I am looking forward to meeting your team tomorrow."
+      },
+      {
+        "value": "c",
+        "label": "C) I am looking forward for meeting your team tomorrow."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Great! In 'look forward to', 'to' is a preposition, so it is followed by the '-ing' form ('meeting').",
+    "errorMsg": "'Look forward to' takes a gerund ('-ing' form), so 'looking forward to meeting' is the natural form."
+  },
+  {
+    "id": 11,
+    "topic": "Comparatives",
+    "question": "Which sentence forms the comparative adjective correctly?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Cycling to work is more healthier than driving."
+      },
+      {
+        "value": "b",
+        "label": "B) Cycling to work is healthyer than driving."
+      },
+      {
+        "value": "c",
+        "label": "C) Cycling to work is healthier than driving."
+      }
+    ],
+    "correct": "c",
+    "successMsg": "Correct! For two-syllable adjectives ending in '-y', change '-y' to '-ier' ('healthier') without adding 'more'.",
+    "errorMsg": "Never combine 'more' with '-er'. Change 'healthy' to 'healthier'."
+  },
+  {
+    "id": 12,
+    "topic": "Natural Collocations: 'make' vs 'do'",
+    "question": "Which sentence uses 'make' or 'do' naturally?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Everyone makes mistakes when learning a new language."
+      },
+      {
+        "value": "b",
+        "label": "B) Everyone does mistakes when learning a new language."
+      },
+      {
+        "value": "c",
+        "label": "C) Everyone takes mistakes when learning a new language."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Nice! In English, the natural collocation is always 'make a mistake', never 'do a mistake'.",
+    "errorMsg": "Use 'make' with 'mistakes' ('make mistakes'), not 'do' or 'take'."
+  },
+  {
+    "id": 13,
+    "topic": "First Conditional",
+    "question": "Choose the sentence that uses the first conditional accurately:",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) If it will rain tomorrow, we will stay inside."
+      },
+      {
+        "value": "b",
+        "label": "B) If it rains tomorrow, we will stay inside."
+      },
+      {
+        "value": "c",
+        "label": "C) If it rained tomorrow, we will stay inside."
+      }
+    ],
+    "correct": "b",
+    "successMsg": "Correct! In a first conditional, use the present simple in the 'if' clause ('If it rains') and 'will' in the main clause.",
+    "errorMsg": "Do not put 'will' inside the 'if' clause for real future conditions; use present simple ('If it rains')."
+  },
+  {
+    "id": 14,
+    "topic": "Relative Clauses",
+    "question": "Which sentence uses the relative pronoun correctly?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) The book who I borrowed from the library was fascinating."
+      },
+      {
+        "value": "b",
+        "label": "B) The book what I borrowed from the library was fascinating."
+      },
+      {
+        "value": "c",
+        "label": "C) The book that I borrowed from the library was fascinating."
+      }
+    ],
+    "correct": "c",
+    "successMsg": "Well done! Use 'that' or 'which' for things like 'the book', and 'who' for people.",
+    "errorMsg": "Use 'that' or 'which' for objects/things ('the book'), not 'who' or 'what'."
+  },
+  {
+    "id": 15,
+    "topic": "Cause & Result Connectors",
+    "question": "Which sentence clearly connects a reason with its result?",
+    "options": [
+      {
+        "value": "a",
+        "label": "A) Traffic was heavy, so I arrived ten minutes late."
+      },
+      {
+        "value": "b",
+        "label": "B) Because traffic was heavy, so I arrived ten minutes late."
+      },
+      {
+        "value": "c",
+        "label": "C) Traffic was heavy, although I arrived ten minutes late."
+      }
+    ],
+    "correct": "a",
+    "successMsg": "Correct! Use either 'so' OR 'because' to connect cause and result—never both in the same sentence.",
+    "errorMsg": "In English, do not use both 'because' and 'so' together; use one connector between the two clauses."
+  }
+]
