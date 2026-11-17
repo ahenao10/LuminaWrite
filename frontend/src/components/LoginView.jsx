@@ -39,6 +39,9 @@ export default function LoginView({
     const endpoint =
       mode === "signup" ? "/api/auth/signup" : "/api/auth/login";
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
@@ -48,6 +51,7 @@ export default function LoginView({
           password,
           display_name: mode === "signup" ? displayName.trim() : undefined,
         }),
+        signal: controller.signal,
       });
 
       const data = await res.json().catch(() => ({}));
@@ -71,10 +75,13 @@ export default function LoginView({
       });
     } catch (err) {
       setErrorMsg(
-        err.message ||
-        `Could not connect to backend at ${API_BASE_URL}.`
+        err.name === "AbortError"
+          ? "Authentication timed out. Please try again in a few seconds."
+          : err.message ||
+              `Could not connect to backend at ${API_BASE_URL}.`
       );
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };

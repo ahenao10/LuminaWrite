@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ActionButton from "./common/ActionButton";
 import EvaluationResultsPanel from "./review/EvaluationResultsPanel";
 import RetentionQuizCard from "./review/RetentionQuizCard";
@@ -14,9 +14,17 @@ export default function SessionReviewView({
   onNavigateToVocabulary,
   onNavigateToJournal,
   onSaveQuizResult,
+  onGenerateEntryQuiz,
+  isGeneratingQuiz = false,
+  quizError = "",
 }) {
   const [reflectionText, setReflectionText] = useState("");
   const [reflectionSaved, setReflectionSaved] = useState(false);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+
+  useEffect(() => {
+    setIsQuizOpen(false);
+  }, [activeEntry?.id]);
 
   if (!activeEntry || !activeEntry.evaluation) {
     return (
@@ -92,6 +100,24 @@ export default function SessionReviewView({
 
         {/* Top Action Bar using shared ActionButton */}
         <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          {showRetentionQuiz && (
+            <ActionButton
+              variant="tertiary"
+              size="md"
+              icon="quiz"
+              onClick={() => {
+                setIsQuizOpen(true);
+                if (
+                  !activeEntry.isDefaultPrompt &&
+                  !activeEntry.quizQuestions?.length
+                ) {
+                  onGenerateEntryQuiz?.(activeEntry);
+                }
+              }}
+            >
+              Practice feedback with quiz
+            </ActionButton>
+          )}
           <ActionButton
             variant="primary"
             size="md"
@@ -163,20 +189,10 @@ export default function SessionReviewView({
         />
       )}
 
-      {/* Bottom Section: 5-Question Retention & Reinforcement Check + Personal Notes */}
+      {/* Bottom Section: Personal Reflection Notes */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
-        {showRetentionQuiz && (
-          <RetentionQuizCard
-            activeEntry={activeEntry}
-            onSaveQuizResult={onSaveQuizResult}
-          />
-        )}
-
         {/* Personal Reflection Notes Container */}
-        <div
-          className={`${showRetentionQuiz ? "lg:col-span-5" : "lg:col-span-12"
-            } rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between`}
-        >
+        <div className="lg:col-span-12 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-surface-container">
               <div className="flex items-center gap-2">
@@ -222,6 +238,35 @@ export default function SessionReviewView({
           </div>
         </div>
       </div>
+      {/* Full-screen Quiz Overlay (hides feedback so learner cannot peek) */}
+      {isQuizOpen && showRetentionQuiz && (
+        <div
+          className="fixed inset-0 z-50 bg-surface overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Practice feedback with quiz"
+        >
+          <button
+            type="button"
+            onClick={() => setIsQuizOpen(false)}
+            aria-label="Close quiz"
+            className="fixed top-5 right-5 z-10 inline-flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high shadow-md border border-outline-variant/40 transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[22px]">close</span>
+          </button>
+
+          <div className="w-full max-w-3xl my-auto">
+            <RetentionQuizCard
+              activeEntry={activeEntry}
+              onSaveQuizResult={onSaveQuizResult}
+              isLoading={isGeneratingQuiz}
+              errorMessage={quizError}
+              onRetry={() => onGenerateEntryQuiz?.(activeEntry)}
+              onClose={() => setIsQuizOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

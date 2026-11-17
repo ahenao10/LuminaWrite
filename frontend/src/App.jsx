@@ -25,7 +25,7 @@ function getRandomDefaultPrompt(cefrLevel = "B1") {
     question: chosen.question,
     min_words: Math.max(15, chosen.min_words || 15),
     tips: Array.isArray(chosen.tips) ? chosen.tips : [],
-    quiz_questions: getRandomDefaultQuizQuestions(5),
+    isDefaultPrompt: true,
   };
 }
 
@@ -90,6 +90,7 @@ function mapDbEntryToUi(row) {
         }
       : null,
     quizResult: row.rubric?.quiz_result || null,
+    isDefaultPrompt: Boolean(row.rubric?.is_default_prompt),
     quizQuestions: Array.isArray(row.rubric?.quiz_questions)
       ? row.rubric.quiz_questions
       : null,
@@ -152,6 +153,8 @@ export default function App() {
   const [vocabResult, setVocabResult] = useState(null);
   const [recentVocabItems, setRecentVocabItems] = useState([]);
   const [vocabError, setVocabError] = useState("");
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [quizError, setQuizError] = useState("");
 
   const fetchEntriesFromDb = async (token) => {
     try {
@@ -244,7 +247,7 @@ export default function App() {
     setUserText("");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
       const body = {
@@ -279,9 +282,7 @@ export default function App() {
         question: data.question,
         min_words: Math.max(15, data.min_words || 15),
         tips: Array.isArray(data.tips) ? data.tips : [],
-        quiz_questions: Array.isArray(data.quiz_questions)
-          ? data.quiz_questions
-          : [],
+        isDefaultPrompt: false,
       });
       setEssayTitle(recommendedTitle);
       setLatestEvaluation(null);
@@ -482,6 +483,7 @@ export default function App() {
           topic: promptData.topic || "General",
           cefr_level: selectedCefr,
           focus_areas: selectedFocusAreas,
+          is_default_prompt: Boolean(promptData?.isDefaultPrompt),
         }),
       });
 
@@ -510,11 +512,10 @@ export default function App() {
             status: "Reviewed",
             user_text: trimmed,
             evaluation: evalResult,
-            quizQuestions:
-              Array.isArray(evalResult.quiz_questions) &&
-              evalResult.quiz_questions.length > 0
-                ? evalResult.quiz_questions
-                : promptData?.quiz_questions || null,
+            isDefaultPrompt: Boolean(promptData?.isDefaultPrompt),
+            quizQuestions: promptData?.isDefaultPrompt
+              ? getRandomDefaultQuizQuestions(5)
+              : null,
           };
 
       setJournalEntries((prev) => [newEntry, ...prev]);
@@ -601,26 +602,82 @@ export default function App() {
     setActiveReviewEntry((prev) =>
       prev && prev.id === entryId ? { ...prev, quizResult } : prev
     );
+  };
 
-    if (!accessToken || !entryId || String(entryId).startsWith("local-")) {
+  const handleGenerateEntryQuiz = async (entry) => {
+    if (!entry) return;
+    if (Array.isArray(entry.quizQuestions) && entry.quizQuestions.length > 0) {
       return;
     }
 
+    // Default login prompts use the local 15-question JSON pool instead of calling the AI API
+    if (entry.isDefaultPrompt) {
+      const defaultQuestions = getRandomDefaultQuizQuestions(5);
+      setJournalEntries((prev) =>
+        prev.map((item) =>
+          item.id === entry.id
+            ? { ...item, quizQuestions: defaultQuestions }
+            : item
+        )
+      );
+      setActiveReviewEntry((prev) =>
+        prev && prev.id === entry.id
+          ? { ...prev, quizQuestions: defaultQuestions }
+          : prev
+      );
+      return;
+    }
+
+    setIsGeneratingQuiz(true);
+    setQuizError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/entries/${entryId}/quiz`, {
-        method: "PATCH",
+      const res = await fetch(`${API_BASE_URL}/api/quiz/generate`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify(quizResult),
+        body: JSON.stringify({
+          entry_id: String(entry.id || "").startsWith("local-") ||
+            String(entry.id || "").startsWith("entry-")
+            ? null
+            : entry.id,
+          prompt_question: entry.question || "",
+          user_text: entry.user_text || "",
+          enhanced_text: entry.evaluation?.enhanced_text || "",
+          corrections: entry.evaluation?.corrections || [],
+          cefr_level: entry.evaluation?.cefr_level || selectedCefr || "B1",
+          topic: entry.topic || "General",
+        }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || "Failed to save quiz results.");
+        throw new Error(
+          errData.detail || `Failed to generate quiz (${res.status}).`
+        );
       }
+      const data = await res.json();
+      const generatedQuestions = Array.isArray(data.quiz_questions)
+        ? data.quiz_questions
+        : [];
+      setJournalEntries((prev) =>
+        prev.map((item) =>
+          item.id === entry.id
+            ? { ...item, quizQuestions: generatedQuestions }
+            : item
+        )
+      );
+      setActiveReviewEntry((prev) =>
+        prev && prev.id === entry.id
+          ? { ...prev, quizQuestions: generatedQuestions }
+          : prev
+      );
     } catch (err) {
-      setErrorMessage(err.message || "Could not save quiz results.");
+      setQuizError(
+        err.message || "Could not generate quiz questions. Please try again."
+      );
+    } finally {
+      setIsGeneratingQuiz(false);
     }
   };
 
@@ -794,6 +851,9 @@ export default function App() {
               }
               onNavigateToJournal={() => setActiveTab("journal-entries")}
               onSaveQuizResult={handleSaveQuizResult}
+              onGenerateEntryQuiz={handleGenerateEntryQuiz}
+              isGeneratingQuiz={isGeneratingQuiz}
+              quizError={quizError}
             />
           )}
 

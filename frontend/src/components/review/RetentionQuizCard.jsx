@@ -11,7 +11,14 @@ export function getRandomDefaultQuizQuestions(count = 5) {
   return copy.slice(0, count);
 }
 
-export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
+export default function RetentionQuizCard({
+  activeEntry,
+  onSaveQuizResult,
+  isLoading = false,
+  errorMessage = "",
+  onRetry,
+  onClose,
+}) {
   const questions = useMemo(() => {
     if (
       Array.isArray(activeEntry?.quizQuestions) &&
@@ -65,8 +72,53 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="rounded-xl bg-surface-container-lowest p-8 shadow-sm flex flex-col items-center justify-center text-center gap-4 min-h-[280px]">
+        <span className="material-symbols-outlined animate-spin text-primary text-[36px]">
+          progress_activity
+        </span>
+        <div>
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">
+            Preparing your 5-question quiz...
+          </h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Creating questions tailored to your Daily Practice prompt and feedback.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    errorMessage &&
+    (!Array.isArray(activeEntry?.quizQuestions) ||
+      activeEntry.quizQuestions.length === 0)
+  ) {
+    return (
+      <div className="rounded-xl bg-surface-container-lowest p-8 shadow-sm flex flex-col items-center justify-center text-center gap-4 min-h-[260px]">
+        <span className="material-symbols-outlined text-error text-[36px]">
+          error_outline
+        </span>
+        <div>
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">
+            Could not load quiz questions
+          </h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-md">
+            {errorMessage}
+          </p>
+        </div>
+        {onRetry && (
+          <ActionButton variant="primary" size="md" icon="refresh" onClick={onRetry}>
+            Try Again
+          </ActionButton>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="lg:col-span-7 rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
+    <div className="rounded-xl bg-surface-container-lowest p-6 shadow-sm flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-3 border-b border-surface-container">
           <div className="flex items-center gap-2">
@@ -197,11 +249,19 @@ export default function RetentionQuizCard({ activeEntry, onSaveQuizResult }) {
             >
               Check Answer
             </ActionButton>
+          ) : currentQIdx === questions.length - 1 ? (
+            <ActionButton
+              variant="tertiary"
+              size="md"
+              icon="check_circle"
+              onClick={onClose}
+            >
+              Done
+            </ActionButton>
           ) : (
             <ActionButton
               variant="primary"
               size="md"
-              disabled={currentQIdx === questions.length - 1}
               onClick={() =>
                 setCurrentQIdx((i) =>
                   Math.min(questions.length - 1, i + 1)

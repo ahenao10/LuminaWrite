@@ -33,7 +33,7 @@ def _sync_request(
 
     req = urllib.request.Request(full_url, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:
             raw = resp.read().decode("utf-8")
             if not raw:
                 return None
@@ -52,6 +52,11 @@ def _sync_request(
         except Exception:
             msg = raw_err or str(exc)
         raise HTTPException(status_code=exc.code, detail=msg) from exc
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="Supabase request timed out. Please try again.",
+        ) from exc
     except urllib.error.URLError as exc:
         raise HTTPException(
             status_code=503,
